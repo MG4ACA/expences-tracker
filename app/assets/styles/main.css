@@ -12,6 +12,52 @@ body {
   line-height: 1.5;
 }
 
+:root {
+  color-scheme: light;
+}
+
+/* PrimeVue theme overrides to keep controls light */
+.p-inputtext,
+.p-dropdown,
+.p-dropdown-panel,
+.p-inputnumber-input,
+.p-calendar,
+.p-calendar .p-inputtext,
+.p-inputgroup,
+.p-inputgroup-addon,
+.p-multiselect,
+.p-datepicker,
+.p-autocomplete,
+.p-select,
+.p-select .p-inputtext {
+  background-color: #ffffff !important;
+  color: var(--et-text) !important;
+}
+
+.p-inputtext,
+.p-dropdown,
+.p-inputnumber,
+.p-calendar,
+.p-inputgroup,
+.p-multiselect,
+.p-select {
+  border-color: var(--et-border) !important;
+}
+
+.p-datatable,
+.p-datatable table,
+.p-datatable-thead > tr > th,
+.p-datatable-tbody > tr > td,
+.p-datatable-tfoot > tr > td {
+  background: #ffffff !important;
+  color: var(--et-text) !important;
+  border-color: var(--et-border) !important;
+}
+
+.p-datatable-tbody > tr:nth-child(even) {
+  background: #f9fafb !important;
+}
+
 a {
   color: inherit;
   text-decoration: none;
