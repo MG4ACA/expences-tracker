@@ -45,13 +45,11 @@ const recent = computed(() => items.value.slice(0, 5));
       <p class="et-muted">Snapshot of your income, expenses, and latest activity.</p>
     </header>
 
-    <div
-      style="display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr))"
-    >
+    <div class="et-summary-grid">
       <Card class="et-card">
         <template #title>Income</template>
         <template #content>
-          <div style="font-size: 24px; font-weight: 700; color: #16a34a">
+          <div class="et-summary-value" style="color: #16a34a">
             {{ formatCurrency(totals.income, 'LKR') }}
           </div>
         </template>
@@ -59,7 +57,7 @@ const recent = computed(() => items.value.slice(0, 5));
       <Card class="et-card">
         <template #title>Expenses</template>
         <template #content>
-          <div style="font-size: 24px; font-weight: 700; color: #dc2626">
+          <div class="et-summary-value" style="color: #dc2626">
             {{ formatCurrency(totals.expense, 'LKR') }}
           </div>
         </template>
@@ -67,7 +65,7 @@ const recent = computed(() => items.value.slice(0, 5));
       <Card class="et-card">
         <template #title>Net</template>
         <template #content>
-          <div style="font-size: 24px; font-weight: 700">
+          <div class="et-summary-value">
             {{ formatCurrency(totals.net, 'LKR') }}
           </div>
         </template>
@@ -77,7 +75,7 @@ const recent = computed(() => items.value.slice(0, 5));
     <Card class="et-card">
       <template #title>Quick actions</template>
       <template #content>
-        <div style="display: flex; gap: 12px; flex-wrap: wrap">
+        <div class="et-action-buttons">
           <NuxtLink v-for="item in quickLinks" :key="item.to" :to="item.to">
             <Button :label="item.label" icon="pi pi-arrow-right" severity="primary" outlined />
           </NuxtLink>
@@ -114,3 +112,50 @@ const recent = computed(() => items.value.slice(0, 5));
     </Card>
   </div>
 </template>
+
+<style scoped>
+.et-summary-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.et-summary-value {
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.et-action-buttons {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .et-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .et-summary-value {
+    font-size: 20px;
+  }
+
+  .et-action-buttons {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .et-summary-value {
+    font-size: 18px;
+  }
+
+  .et-action-buttons {
+    flex-direction: column;
+  }
+
+  .et-action-buttons :deep(.p-button) {
+    width: 100%;
+  }
+}
+</style>

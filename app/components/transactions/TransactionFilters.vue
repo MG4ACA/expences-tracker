@@ -30,15 +30,7 @@ function reset() {
 </script>
 
 <template>
-  <div
-    class="et-card"
-    style="
-      display: grid;
-      gap: 12px;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      align-items: center;
-    "
-  >
+  <div class="et-filter-bar">
     <Dropdown
       v-model="props.modelValue.type"
       :options="typeOptions"
@@ -73,3 +65,30 @@ function reset() {
     <Button label="Reset" icon="pi pi-refresh" outlined size="small" @click="reset" />
   </div>
 </template>
+
+<style scoped>
+.et-filter-bar {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  align-items: center;
+  background: var(--et-surface);
+  border: 1px solid var(--et-border);
+  border-radius: var(--et-radius-md);
+  padding: 16px;
+}
+
+@media (max-width: 768px) {
+  .et-filter-bar {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .et-filter-bar {
+    padding: 10px;
+  }
+}
+</style>

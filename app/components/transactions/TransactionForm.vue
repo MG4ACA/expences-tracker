@@ -82,7 +82,7 @@ function submit() {
       />
     </div>
 
-    <div class="et-gap" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr))">
+    <div class="et-form-grid">
       <Calendar v-model="form.occurredAt" show-icon show-button-bar fluid date-format="yy-M-dd" />
       <Dropdown
         v-model="form.accountId"
@@ -96,8 +96,36 @@ function submit() {
     <InputText v-model="form.note" placeholder="Note (optional)" />
 
     <Divider />
-    <div style="display: flex; gap: 12px; justify-content: flex-end">
+    <div class="et-form-actions">
       <Button label="Add" icon="pi pi-check" @click="submit" />
     </div>
   </div>
 </template>
+
+<style scoped>
+.et-form-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.et-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+@media (max-width: 768px) {
+  .et-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .et-form-actions {
+    justify-content: stretch;
+  }
+
+  .et-form-actions :deep(.p-button) {
+    width: 100%;
+  }
+}
+</style>
