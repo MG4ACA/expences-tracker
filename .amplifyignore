@@ -1,9 +1,0 @@
-amplify/hooks/pre-push.sh
-amplify/hooks/pre-deployment-status.sh
-node_modules
-dist
-.nuxt
-.env
-.env.local
-*.log
-.DS_Store
