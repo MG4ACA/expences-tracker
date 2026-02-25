@@ -12,6 +12,9 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       currencyCode: 'LKR',
+      supabaseUrl: process.env.VITE_SUPABASE_URL || 'https://nqiwjaeblkwkaljmxfut.supabase.co',
+      supabaseKey:
+        process.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_c5hhf3Bq__tDT0wGXU4UKQ_pm3bhMBJ',
     },
   },
   primevue: {

@@ -1,15 +1,24 @@
 <script setup>
-import CategoryForm from '@/components/categories/CategoryForm.vue';
-import CategoryList from '@/components/categories/CategoryList.vue';
-import { useCategoriesStore } from '@/stores/categories';
-import { storeToRefs } from 'pinia';
+  import CategoryForm from '@/components/categories/CategoryForm.vue';
+  import CategoryList from '@/components/categories/CategoryList.vue';
+  import { useAuth } from '@/composables/useAuth';
+  import { useCategoriesStore } from '@/stores/categories';
+  import { storeToRefs } from 'pinia';
+  import { onMounted } from 'vue';
 
-const catStore = useCategoriesStore();
-const { items } = storeToRefs(catStore);
+  const catStore = useCategoriesStore();
+  const { items, isLoading } = storeToRefs(catStore);
+  const { userId } = useAuth();
 
-function addCategory(payload) {
-  catStore.addCategory(payload);
-}
+  onMounted(async () => {
+    if (userId.value && items.value.length === 0) {
+      await catStore.loadCategories();
+    }
+  });
+
+  function addCategory(payload) {
+    catStore.addCategory(payload);
+  }
 </script>
 
 <template>

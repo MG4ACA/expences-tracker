@@ -1,40 +1,56 @@
 <script setup>
-import TransactionFilters from '@/components/transactions/TransactionFilters.vue';
-import TransactionForm from '@/components/transactions/TransactionForm.vue';
-import TransactionList from '@/components/transactions/TransactionList.vue';
-import { useAccountsStore } from '@/stores/accounts';
-import { useCategoriesStore } from '@/stores/categories';
-import { useTransactionsStore } from '@/stores/transactions';
-import { storeToRefs } from 'pinia';
-import Card from 'primevue/card';
-import { computed } from 'vue';
+  import TransactionFilters from '@/components/transactions/TransactionFilters.vue';
+  import TransactionForm from '@/components/transactions/TransactionForm.vue';
+  import TransactionList from '@/components/transactions/TransactionList.vue';
+  import { useAuth } from '@/composables/useAuth';
+  import { useAccountsStore } from '@/stores/accounts';
+  import { useCategoriesStore } from '@/stores/categories';
+  import { useTransactionsStore } from '@/stores/transactions';
+  import { storeToRefs } from 'pinia';
+  import Card from 'primevue/card';
+  import { computed, onMounted } from 'vue';
 
-const txStore = useTransactionsStore();
-const catStore = useCategoriesStore();
-const accStore = useAccountsStore();
+  const txStore = useTransactionsStore();
+  const catStore = useCategoriesStore();
+  const accStore = useAccountsStore();
+  const { userId } = useAuth();
 
-const { filtered, totals, filters } = storeToRefs(txStore);
+  const { filtered, totals, filters } = storeToRefs(txStore);
 
-const categoriesById = computed(() =>
-  catStore.items.reduce((acc, item) => {
-    acc[item.id] = item;
-    return acc;
-  }, {})
-);
-const accountsById = computed(() =>
-  accStore.items.reduce((acc, item) => {
-    acc[item.id] = item;
-    return acc;
-  }, {})
-);
+  onMounted(async () => {
+    if (userId.value) {
+      if (catStore.items.length === 0 && !catStore.isLoading) {
+        await catStore.loadCategories();
+      }
+      if (accStore.items.length === 0 && !accStore.isLoading) {
+        await accStore.loadAccounts();
+      }
+      if (txStore.items.length === 0 && !txStore.isLoading) {
+        await txStore.loadTransactions();
+      }
+    }
+  });
 
-function handleAdd(txn) {
-  txStore.addTransaction(txn);
-}
+  const categoriesById = computed(() =>
+    catStore.items.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {}),
+  );
+  const accountsById = computed(() =>
+    accStore.items.reduce((acc, item) => {
+      acc[item.id] = item;
+      return acc;
+    }, {}),
+  );
 
-function updateFilters(next) {
-  txStore.setFilters(next);
-}
+  function handleAdd(txn) {
+    txStore.addTransaction(txn);
+  }
+
+  function updateFilters(next) {
+    txStore.setFilters(next);
+  }
 </script>
 
 <template>
