@@ -106,14 +106,17 @@
 </template>
 
 <script setup>
-import { businessApi } from '@/api/businesses';
-import { financeApi } from '@/api/finance';
-import { todoApi } from '@/api/todos';
+import { useBusinesses } from '@/composables/useBusinesses';
+import { useFinance } from '@/composables/useFinance';
+import { useTodos } from '@/composables/useTodos';
 import Button from 'primevue/button';
 import Tag from 'primevue/tag';
 import { computed, onMounted, ref } from 'vue';
 
-const summary = ref({ income: 0, expense: 0, net: 0 });
+const { businesses, load: loadBusinesses } = useBusinesses();
+const { summary, loadSummary } = useFinance();
+const { todos, load: loadTodos } = useTodos();
+
 const stats = ref({ totalBusinesses: 0, converted: 0, openTodos: 0 });
 const followups = ref([]);
 const todayTodos = ref([]);
@@ -132,23 +135,20 @@ function prioritySeverity(p) {
 }
 
 onMounted(async () => {
-  const [fin, businesses, todos] = await Promise.all([
-    financeApi.getSummary(new Date().toISOString().slice(0, 7)),
-    businessApi.list(),
-    todoApi.list(),
+  await Promise.all([
+    loadSummary(new Date().toISOString().slice(0, 7)),
+    loadBusinesses(),
+    loadTodos(),
   ]);
 
-  summary.value = fin;
-  stats.value.totalBusinesses = businesses.length;
-  stats.value.converted = businesses.filter((b) => b.status === 'converted').length;
-  stats.value.openTodos = todos.filter((t) => t.status !== 'done').length;
+  stats.value.totalBusinesses = businesses.value.length;
+  stats.value.converted = businesses.value.filter((b) => b.status === 'converted').length;
+  stats.value.openTodos = todos.value.filter((t) => t.status !== 'done').length;
 
-  // Follow-ups due today — check last cold_call next_followup
-  // Simplified: businesses that are 'contacted' or 'interested' shown as reminders
-  followups.value = businesses
+  followups.value = businesses.value
     .filter((b) => ['contacted', 'interested', 'callback'].includes(b.status))
     .slice(0, 5);
 
-  todayTodos.value = todos.filter((t) => !t.due_date || t.due_date.slice(0, 10) === today);
+  todayTodos.value = todos.value.filter((t) => !t.due_date || t.due_date.slice(0, 10) === today);
 });
 </script>

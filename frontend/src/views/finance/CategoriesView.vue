@@ -90,6 +90,7 @@
           />
         </div>
       </div>
+      <Message v-if="error" severity="error" class="mx-3 mb-2">{{ error }}</Message>
       <template #footer>
         <Button label="Cancel" text @click="dialogVisible = false" />
         <Button label="Add" :loading="saving" @click="addCategory" />
@@ -99,16 +100,17 @@
 </template>
 
 <script setup>
-import { financeApi } from '@/api/finance';
+import { useFinance } from '@/composables/useFinance';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
-import { useToast } from 'primevue/usetoast';
+import Message from 'primevue/message';
 import { computed, onMounted, ref } from 'vue';
 
-const toast = useToast();
-const categories = ref([]);
+const { categories, error, clearError, loadCategories, createCategory, removeCategory } =
+  useFinance();
+
 const dialogVisible = ref(false);
 const newName = ref('');
 const newType = ref('expense');
@@ -117,13 +119,10 @@ const saving = ref(false);
 const incomeCategories = computed(() => categories.value.filter((c) => c.type === 'income'));
 const expenseCategories = computed(() => categories.value.filter((c) => c.type === 'expense'));
 
-async function load() {
-  categories.value = await financeApi.getCategories();
-}
-
 function openDialog(type) {
   newType.value = type;
   newName.value = '';
+  clearError();
   dialogVisible.value = true;
 }
 
@@ -131,19 +130,18 @@ async function addCategory() {
   if (!newName.value) return;
   saving.value = true;
   try {
-    await financeApi.createCategory({ name: newName.value, type: newType.value });
-    toast.add({ severity: 'success', summary: 'Category added', life: 2000 });
+    await createCategory({ name: newName.value, type: newType.value });
     dialogVisible.value = false;
-    await load();
+  } catch {
+    // error.value shown inline
   } finally {
     saving.value = false;
   }
 }
 
 async function deleteCategory(id) {
-  await financeApi.deleteCategory(id);
-  await load();
+  await removeCategory(id);
 }
 
-onMounted(load);
+onMounted(loadCategories);
 </script>

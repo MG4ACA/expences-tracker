@@ -1,0 +1,108 @@
+/* ── Global reset & base ──────────────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: #f4f5fb;
+  color: #1e1b3a;
+}
+
+/* ── Touch targets ────────────────────────────────────────────────── */
+button, a, [role="button"] {
+  min-height: 44px; /* iOS HIG minimum touch target */
+  touch-action: manipulation;
+}
+
+/* ── Scrollbars ───────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+/* ── PrimeVue overrides ───────────────────────────────────────────── */
+
+/* Rounded inputs */
+.p-inputtext,
+.p-password input,
+.p-dropdown,
+.p-multiselect,
+.p-textarea {
+  border-radius: 8px !important;
+}
+
+/* Buttons */
+.p-button {
+  border-radius: 8px !important;
+  font-weight: 500;
+}
+.p-button.p-button-rounded {
+  border-radius: 50% !important;
+}
+
+/* Cards */
+.surface-card {
+  border-radius: 14px !important;
+  border: 1px solid #ebebf5;
+}
+
+/* DataTable mobile scroll */
+.p-datatable-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Dialogs */
+.p-dialog {
+  border-radius: 16px !important;
+}
+.p-dialog .p-dialog-header {
+  border-radius: 16px 16px 0 0 !important;
+  padding: 1.25rem 1.5rem 1rem;
+}
+
+/* Tags */
+.p-tag {
+  border-radius: 6px !important;
+  font-weight: 500;
+}
+
+/* ── Mobile helpers ───────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .p-dialog {
+    margin: 0.75rem !important;
+    max-height: calc(100dvh - 80px) !important;
+  }
+
+  /* Full-width dialogs on mobile */
+  .p-dialog-mask .p-dialog {
+    width: calc(100vw - 1.5rem) !important;
+    max-width: none !important;
+  }
+
+  .p-datatable .p-datatable-thead > tr > th,
+  .p-datatable .p-datatable-tbody > tr > td {
+    padding: 0.6rem 0.75rem;
+    font-size: 0.85rem;
+  }
+
+  /* Tighten cards */
+  .surface-card {
+    border-radius: 12px !important;
+  }
+}

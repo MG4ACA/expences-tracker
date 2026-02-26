@@ -121,6 +121,7 @@
           </div>
         </div>
       </div>
+      <Message v-if="error" severity="error" :closable="false" class="mt-2">{{ error }}</Message>
       <template #footer>
         <Button label="Cancel" text @click="dialogVisible = false" />
         <Button :label="editItem ? 'Update' : 'Create'" :loading="saving" @click="save" />
@@ -130,7 +131,7 @@
 </template>
 
 <script setup>
-import { businessApi } from '@/api/businesses';
+import { useBusinesses } from '@/composables/useBusinesses';
 import { useAuthStore } from '@/stores/auth';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
@@ -138,18 +139,16 @@ import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
-import { useToast } from 'primevue/usetoast';
 import { computed, onMounted, ref } from 'vue';
 
 const auth = useAuthStore();
-const toast = useToast();
 const confirm = useConfirm();
+const { businesses, loading, error, clearError, load, create, update, remove } = useBusinesses();
 
-const businesses = ref([]);
-const loading = ref(false);
 const search = ref('');
 const filterStatus = ref(null);
 const dialogVisible = ref(false);
@@ -201,18 +200,10 @@ function statusSeverity(s) {
   );
 }
 
-async function load() {
-  loading.value = true;
-  try {
-    businesses.value = await businessApi.list();
-  } finally {
-    loading.value = false;
-  }
-}
-
 function openDialog(item = null) {
   editItem.value = item;
   form.value = item ? { ...item } : emptyForm();
+  clearError();
   dialogVisible.value = true;
 }
 
@@ -221,16 +212,13 @@ async function save() {
   saving.value = true;
   try {
     if (editItem.value) {
-      await businessApi.update(editItem.value.id, form.value);
-      toast.add({ severity: 'success', summary: 'Updated', life: 3000 });
+      await update(editItem.value.id, form.value);
     } else {
-      await businessApi.create(form.value);
-      toast.add({ severity: 'success', summary: 'Business added', life: 3000 });
+      await create(form.value);
     }
     dialogVisible.value = false;
-    await load();
   } catch {
-    toast.add({ severity: 'error', summary: 'Error saving', life: 3000 });
+    // error.value is set by the composable — shown inline in dialog
   } finally {
     saving.value = false;
   }
@@ -244,11 +232,7 @@ function confirmDelete(item) {
     rejectLabel: 'Cancel',
     acceptLabel: 'Delete',
     acceptClass: 'p-button-danger',
-    accept: async () => {
-      await businessApi.remove(item.id);
-      toast.add({ severity: 'info', summary: 'Deleted', life: 3000 });
-      await load();
-    },
+    accept: () => remove(item.id),
   });
 }
 

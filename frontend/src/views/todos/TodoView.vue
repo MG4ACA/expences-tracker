@@ -125,6 +125,7 @@
           </div>
         </div>
       </div>
+      <Message v-if="error" severity="error" class="mx-3 mb-2">{{ error }}</Message>
       <template #footer>
         <Button label="Cancel" text @click="dialogVisible = false" />
         <Button :label="editItem ? 'Update' : 'Create'" :loading="saving" @click="save" />
@@ -134,22 +135,21 @@
 </template>
 
 <script setup>
-import { todoApi } from '@/api/todos';
+import { useTodos } from '@/composables/useTodos';
 import Button from 'primevue/button';
 import Calendar from 'primevue/calendar';
 import Checkbox from 'primevue/checkbox';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
 import SelectButton from 'primevue/selectbutton';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
-import { useToast } from 'primevue/usetoast';
 import { computed, onMounted, ref } from 'vue';
 
-const toast = useToast();
-const todos = ref([]);
-const loading = ref(false);
+const { todos, loading, error, clearError, load, create, update, toggleDone, remove } = useTodos();
+
 const statusFilter = ref(null);
 const dialogVisible = ref(false);
 const editItem = ref(null);
@@ -192,20 +192,12 @@ function isOverdue(todo) {
   return new Date(todo.due_date) < new Date(new Date().toDateString());
 }
 
-async function load() {
-  loading.value = true;
-  try {
-    todos.value = await todoApi.list();
-  } finally {
-    loading.value = false;
-  }
-}
-
 function openDialog(item = null) {
   editItem.value = item;
   form.value = item
     ? { ...item, due_date: item.due_date ? new Date(item.due_date) : null }
     : emptyForm();
+  clearError();
   dialogVisible.value = true;
 }
 
@@ -221,27 +213,20 @@ async function save() {
           : form.value.due_date,
     };
     if (editItem.value) {
-      await todoApi.update(editItem.value.id, payload);
+      await update(editItem.value.id, payload);
     } else {
-      await todoApi.create(payload);
+      await create(payload);
     }
-    toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
     dialogVisible.value = false;
-    await load();
+  } catch {
+    // error.value shown inline
   } finally {
     saving.value = false;
   }
 }
 
-async function toggleDone(todo) {
-  const newStatus = todo.status === 'done' ? 'pending' : 'done';
-  await todoApi.update(todo.id, { ...todo, status: newStatus });
-  await load();
-}
-
 async function deleteTodo(id) {
-  await todoApi.remove(id);
-  await load();
+  await remove(id);
 }
 
 onMounted(load);

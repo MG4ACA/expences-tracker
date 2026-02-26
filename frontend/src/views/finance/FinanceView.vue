@@ -87,7 +87,7 @@
                 rounded
                 size="small"
                 severity="danger"
-                @click="deleteRecord(data.id)"
+                @click="deleteRecord_(data.id)"
               />
             </div>
           </template>
@@ -141,6 +141,7 @@
           </div>
         </div>
       </div>
+      <Message v-if="error" severity="error" class="mx-3 mb-2">{{ error }}</Message>
       <template #footer>
         <Button label="Cancel" text @click="dialogVisible = false" />
         <Button :label="editItem ? 'Update' : 'Add'" :loading="saving" @click="save" />
@@ -150,7 +151,7 @@
 </template>
 
 <script setup>
-import { financeApi } from '@/api/finance';
+import { useFinance } from '@/composables/useFinance';
 import Button from 'primevue/button';
 import Calendar from 'primevue/calendar';
 import Column from 'primevue/column';
@@ -159,16 +160,24 @@ import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
 import Tag from 'primevue/tag';
-import { useToast } from 'primevue/usetoast';
 import { computed, onMounted, ref, watch } from 'vue';
 
-const toast = useToast();
+const {
+  records,
+  categories,
+  summary,
+  loading,
+  error,
+  clearError,
+  loadCategories,
+  loadAll,
+  createRecord,
+  updateRecord,
+  removeRecord,
+} = useFinance();
 
-const records = ref([]);
-const categories = ref([]);
-const summary = ref({ income: 0, expense: 0, net: 0 });
-const loading = ref(false);
 const monthFilter = ref(new Date().toISOString().slice(0, 7));
 const typeFilter = ref(null);
 const dialogVisible = ref(false);
@@ -204,18 +213,10 @@ function formatDate(d) {
 }
 
 async function load() {
-  loading.value = true;
-  try {
-    const params = {};
-    if (monthFilter.value) params.month = monthFilter.value;
-    if (typeFilter.value) params.type = typeFilter.value;
-    [records.value, summary.value] = await Promise.all([
-      financeApi.getRecords(params),
-      financeApi.getSummary(monthFilter.value),
-    ]);
-  } finally {
-    loading.value = false;
-  }
+  const params = {};
+  if (monthFilter.value) params.month = monthFilter.value;
+  if (typeFilter.value) params.type = typeFilter.value;
+  await loadAll(params);
 }
 
 watch([monthFilter, typeFilter], load);
@@ -223,6 +224,7 @@ watch([monthFilter, typeFilter], load);
 function openDialog(item = null) {
   editItem.value = item;
   form.value = item ? { ...item, date: new Date(item.date) } : emptyForm();
+  clearError();
   dialogVisible.value = true;
 }
 
@@ -238,26 +240,25 @@ async function save() {
           : form.value.date,
     };
     if (editItem.value) {
-      await financeApi.updateRecord(editItem.value.id, payload);
+      await updateRecord(editItem.value.id, payload);
     } else {
-      await financeApi.createRecord(payload);
+      await createRecord(payload);
     }
-    toast.add({ severity: 'success', summary: 'Saved', life: 2000 });
     dialogVisible.value = false;
     await load();
+  } catch {
+    // error.value shown inline in dialog
   } finally {
     saving.value = false;
   }
 }
 
-async function deleteRecord(id) {
-  await financeApi.deleteRecord(id);
-  toast.add({ severity: 'info', summary: 'Deleted', life: 2000 });
+async function deleteRecord_(id) {
+  await removeRecord(id);
   await load();
 }
 
 onMounted(async () => {
-  categories.value = await financeApi.getCategories();
-  await load();
+  await Promise.all([loadCategories(), load()]);
 });
 </script>

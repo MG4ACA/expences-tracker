@@ -77,6 +77,7 @@
           />
         </div>
       </div>
+      <Message v-if="error" severity="error" class="mx-3 mb-2">{{ error }}</Message>
       <template #footer>
         <Button label="Cancel" text @click="dialogVisible = false" />
         <Button :label="editItem ? 'Update' : 'Create'" :loading="saving" @click="save" />
@@ -86,7 +87,7 @@
 </template>
 
 <script setup>
-import { userApi } from '@/api/users';
+import { useUsers } from '@/composables/useUsers';
 import { useAuthStore } from '@/stores/auth';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
@@ -94,18 +95,16 @@ import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
 import Password from 'primevue/password';
 import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
-import { useToast } from 'primevue/usetoast';
 import { computed, onMounted, ref } from 'vue';
 
 const auth = useAuthStore();
-const toast = useToast();
 const confirm = useConfirm();
+const { users, loading, error, clearError, load, create, update, remove } = useUsers();
 
-const users = ref([]);
-const loading = ref(false);
 const dialogVisible = ref(false);
 const editItem = ref(null);
 const saving = ref(false);
@@ -120,20 +119,12 @@ function formatDate(d) {
     : '';
 }
 
-async function load() {
-  loading.value = true;
-  try {
-    users.value = await userApi.list();
-  } finally {
-    loading.value = false;
-  }
-}
-
 function openDialog(item = null) {
   editItem.value = item;
   form.value = item
     ? { name: item.name, email: item.email, password: '', role: item.role }
     : emptyForm();
+  clearError();
   dialogVisible.value = true;
 }
 
@@ -143,16 +134,13 @@ async function save() {
   saving.value = true;
   try {
     if (editItem.value) {
-      await userApi.update(editItem.value.id, form.value);
-      toast.add({ severity: 'success', summary: 'User updated', life: 2000 });
+      await update(editItem.value.id, form.value);
     } else {
-      await userApi.create(form.value);
-      toast.add({ severity: 'success', summary: 'User created', life: 2000 });
+      await create(form.value);
     }
     dialogVisible.value = false;
-    await load();
-  } catch (err) {
-    toast.add({ severity: 'error', summary: err.response?.data?.message || 'Error', life: 3000 });
+  } catch {
+    // error.value shown inline
   } finally {
     saving.value = false;
   }
@@ -165,9 +153,7 @@ function confirmDelete(item) {
     icon: 'pi pi-trash',
     acceptClass: 'p-button-danger',
     accept: async () => {
-      await userApi.remove(item.id);
-      toast.add({ severity: 'info', summary: 'User deleted', life: 2000 });
-      await load();
+      await remove(item.id);
     },
   });
 }

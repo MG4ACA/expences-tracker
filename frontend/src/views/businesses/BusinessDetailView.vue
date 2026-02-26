@@ -71,7 +71,7 @@
             rounded
             size="small"
             severity="danger"
-            @click="deleteCall(c.id)"
+            @click="removeCall(c.id, id)"
           />
         </div>
         <div v-if="c.notes" class="text-sm text-gray-600">{{ c.notes }}</div>
@@ -113,6 +113,7 @@
           />
         </div>
       </div>
+      <Message v-if="error" severity="error" :closable="false" class="mt-2">{{ error }}</Message>
       <template #footer>
         <Button label="Cancel" text @click="callDialog = false" />
         <Button label="Save Call" :loading="savingCall" @click="saveCall" />
@@ -126,27 +127,36 @@
 </template>
 
 <script setup>
-import { businessApi } from '@/api/businesses';
+import { useBusinesses } from '@/composables/useBusinesses';
 import Button from 'primevue/button';
 import Calendar from 'primevue/calendar';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
+import Message from 'primevue/message';
 import ProgressSpinner from 'primevue/progressspinner';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
-import { useToast } from 'primevue/usetoast';
 import { onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
-const toast = useToast();
 const id = route.params.id;
 
-const business = ref(null);
-const calls = ref([]);
+const {
+  current: business,
+  calls,
+  loading,
+  error,
+  clearError,
+  loadOne,
+  updateCurrent,
+  loadCalls,
+  addCall,
+  removeCall,
+} = useBusinesses();
+
 const callDialog = ref(false);
 const savingCall = ref(false);
-
 const callForm = ref({ call_date: new Date(), outcome: '', notes: '', next_followup: null });
 
 const statusOptions = [
@@ -191,49 +201,35 @@ function formatDate(d) {
     day: 'numeric',
   });
 }
-
-async function loadCalls() {
-  calls.value = await businessApi.getCalls(id);
+function toDateStr(v) {
+  return v instanceof Date ? v.toISOString().slice(0, 10) : v;
 }
 
 async function updateStatus() {
-  await businessApi.update(id, business.value);
-  toast.add({ severity: 'success', summary: 'Status updated', life: 2000 });
+  await updateCurrent({ status: business.value.status });
 }
 
 async function saveCall() {
   if (!callForm.value.outcome) return;
   savingCall.value = true;
+  clearError();
   try {
     const payload = {
       ...callForm.value,
-      call_date:
-        callForm.value.call_date instanceof Date
-          ? callForm.value.call_date.toISOString().slice(0, 10)
-          : callForm.value.call_date,
-      next_followup:
-        callForm.value.next_followup instanceof Date
-          ? callForm.value.next_followup.toISOString().slice(0, 10)
-          : callForm.value.next_followup,
+      call_date: toDateStr(callForm.value.call_date),
+      next_followup: toDateStr(callForm.value.next_followup),
     };
-    await businessApi.addCall(id, payload);
-    toast.add({ severity: 'success', summary: 'Call logged', life: 2000 });
+    await addCall(id, payload);
     callDialog.value = false;
     callForm.value = { call_date: new Date(), outcome: '', notes: '', next_followup: null };
-    await loadCalls();
   } catch {
-    toast.add({ severity: 'error', summary: 'Error', life: 2000 });
+    // error.value shown inline in dialog
   } finally {
     savingCall.value = false;
   }
 }
 
-async function deleteCall(callId) {
-  await businessApi.deleteCall(callId);
-  await loadCalls();
-}
-
 onMounted(async () => {
-  [business.value] = await Promise.all([businessApi.get(id), loadCalls()]);
+  await Promise.all([loadOne(id), loadCalls(id)]);
 });
 </script>
