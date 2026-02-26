@@ -123,38 +123,3 @@ async function handleLogin() {
   }
 }
 </style>
-
-
-<script setup>
-import { useAuthStore } from '@/stores/auth';
-import Button from 'primevue/button';
-import InputText from 'primevue/inputtext';
-import Message from 'primevue/message';
-import Password from 'primevue/password';
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-
-const auth = useAuthStore();
-const router = useRouter();
-
-const email = ref('');
-const password = ref('');
-const loading = ref(false);
-const error = ref('');
-
-async function handleLogin() {
-  if (!email.value || !password.value) {
-    error.value = 'Please enter email and password';
-    return;
-  }
-  loading.value = true;
-  error.value = '';
-  try {
-    await auth.login(email.value, password.value);
-    router.push('/');
-  } catch (err) {
-    error.value = err.response?.data?.message || err.message || 'Login failed. Please try again.';
-    loading.value = false;
-  }
-}
-</script>
