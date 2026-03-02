@@ -1,6 +1,5 @@
 <template>
   <div class="layout-wrapper">
-
     <!-- ── Desktop Sidebar ──────────────────────────────────────── -->
     <aside class="layout-sidebar">
       <!-- Logo -->
@@ -18,6 +17,7 @@
           <NavItem to="/todos" icon="pi-check-square" label="My Tasks" />
           <template v-if="auth.isAdmin">
             <li class="nav-section-label">Admin</li>
+            <NavItem to="/servers" icon="pi-server" label="Servers" />
             <NavItem to="/admin/users" icon="pi-users" label="Users" />
           </template>
         </ul>
@@ -25,7 +25,12 @@
 
       <!-- User -->
       <div class="sidebar-user">
-        <Avatar :label="userInitial" shape="circle" size="small" class="sidebar-avatar flex-shrink-0" />
+        <Avatar
+          :label="userInitial"
+          shape="circle"
+          size="small"
+          class="sidebar-avatar flex-shrink-0"
+        />
         <div class="flex-1 sidebar-user-info">
           <div class="sidebar-user-name">{{ auth.user?.name }}</div>
           <div class="sidebar-user-role">{{ auth.user?.role }}</div>
@@ -44,7 +49,6 @@
 
     <!-- ── Main area ─────────────────────────────────────────────── -->
     <div class="layout-main">
-
       <!-- Topbar -->
       <header class="layout-topbar">
         <div class="topbar-title">{{ pageTitle }}</div>
@@ -101,6 +105,12 @@
         </button>
       </RouterLink>
 
+      <RouterLink v-if="auth.isAdmin" to="/servers" custom v-slot="{ isActive, navigate }">
+        <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
+          <i class="pi pi-server"></i>
+          <span>Servers</span>
+        </button>
+      </RouterLink>
       <RouterLink v-if="auth.isAdmin" to="/admin/users" custom v-slot="{ isActive, navigate }">
         <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
           <i class="pi pi-users"></i>
@@ -108,7 +118,6 @@
         </button>
       </RouterLink>
     </nav>
-
   </div>
 </template>
 
@@ -127,13 +136,14 @@ const route = useRoute();
 const userInitial = computed(() => auth.user?.name?.charAt(0).toUpperCase() || 'U');
 
 const pageTitles = {
-  Dashboard:      'Dashboard',
-  Businesses:     'Business Prospecting',
+  Dashboard: 'Dashboard',
+  Businesses: 'Business Prospecting',
   BusinessDetail: 'Business Detail',
-  Finance:        'Finance',
-  Categories:     'Finance Categories',
-  Todos:          'My Tasks',
-  Users:          'User Management',
+  Finance: 'Finance',
+  Categories: 'Finance Categories',
+  Todos: 'My Tasks',
+  Servers: 'Server Deployments',
+  Users: 'User Management',
 };
 
 const pageTitle = computed(() => pageTitles[route.name] || 'Lumicore Tracker');
@@ -370,4 +380,3 @@ function handleLogout() {
   }
 }
 </style>
-

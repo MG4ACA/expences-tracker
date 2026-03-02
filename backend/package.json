@@ -4,7 +4,11 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "seed": "node seeders/runner.js",
+    "seed:status": "node seeders/runner.js --status",
+    "seed:fresh": "node seeders/runner.js --fresh",
+    "db:setup": "echo 'Step 1: Run database.sql in MySQL, then run npm run seed'"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

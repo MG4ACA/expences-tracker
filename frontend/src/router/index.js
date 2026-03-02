@@ -44,6 +44,12 @@ const routes = [
         component: () => import('@/views/todos/TodoView.vue'),
       },
       {
+        path: 'servers',
+        name: 'Servers',
+        component: () => import('@/views/servers/ServersView.vue'),
+        meta: { requiresAdmin: true },
+      },
+      {
         path: 'admin/users',
         name: 'Users',
         component: () => import('@/views/admin/UsersView.vue'),

@@ -114,3 +114,43 @@ INSERT INTO finance_categories (user_id, name, type) VALUES
 (1, 'Liquor', 'expense'),
 (1, 'Smoking', 'expense'),
 (1, 'Food', 'expense');
+
+-- ─────────────────────────────────────────────
+-- VPS Servers
+-- Stores the VPS hosts where client apps are deployed.
+-- New VPS hosts can be added as the business grows.
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS vps_servers (
+  id          INT PRIMARY KEY AUTO_INCREMENT,
+  label       VARCHAR(100) NOT NULL,          -- e.g. "Hostinger VPS 1"
+  host        VARCHAR(255) NOT NULL,           -- IP or hostname
+  notes       TEXT,
+  created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- ─────────────────────────────────────────────
+-- Deployments
+-- Tracks PM2 server deployments per business.
+-- Phase 2: agent_secret is used by a VPS agent script
+--          to POST live status updates to /api/deployments/agent/status.
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS deployments (
+  id            INT PRIMARY KEY AUTO_INCREMENT,
+  business_id   INT NOT NULL,
+  vps_id        INT,
+  pm2_app_name  VARCHAR(100) NOT NULL,          -- PM2 process name
+  port          SMALLINT UNSIGNED NOT NULL,      -- exposed port
+  vps_path      VARCHAR(255),                   -- /var/www/x
+  status        ENUM('online','offline','error','unknown') DEFAULT 'unknown',
+  agent_secret  VARCHAR(64),                    -- Phase 2: VPS agent auth token
+  last_seen_at  TIMESTAMP NULL DEFAULT NULL,    -- Phase 2: last agent ping time
+  notes         TEXT,
+  created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE,
+  FOREIGN KEY (vps_id)      REFERENCES vps_servers(id) ON DELETE SET NULL
+);
+
+-- Seed data is managed by Node.js seeders (backend/seeders/).
+-- Run:  npm run seed

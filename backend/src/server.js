@@ -14,6 +14,7 @@ app.use('/api/businesses', require('./routes/businesses'));
 app.use('/api/coldcalls', require('./routes/coldcalls'));
 app.use('/api/finance', require('./routes/finance'));
 app.use('/api/todos', require('./routes/todos'));
+app.use('/api/deployments', require('./routes/deployments'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
