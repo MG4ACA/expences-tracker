@@ -1,8 +1,8 @@
 # 🚀 Hostinger VPS Deployment Guide
 
-## Pharmacy POS System (MEVN Stack)
+## Lumicore Tracker (Vue.js + Express.js + MySQL)
 
-This guide will walk you through deploying your Pharmacy POS application (Vue.js frontend + Express.js backend) on a Hostinger VPS with the MEVN stack template.
+This guide walks you through deploying the Lumicore Tracker application (Vue.js frontend + Express.js backend) on a Hostinger VPS with the MEVN stack template.
 
 ---
 
@@ -11,7 +11,7 @@ This guide will walk you through deploying your Pharmacy POS application (Vue.js
 - Hostinger VPS with Ubuntu 22.04 + MEVN Stack template installed
 - SSH access to your VPS
 - Your VPS IP address
-- Domain name (optional, but recommended)
+- Domain name: `tracker.lumicore-labs.com`
 
 ---
 
@@ -21,22 +21,22 @@ This guide will walk you through deploying your Pharmacy POS application (Vue.js
 ┌─────────────────────────────────────────┐
 │         Hostinger VPS Server            │
 │                                         │
-│  ┌────────────────────────────────┐    │
-│  │  Nginx (Reverse Proxy)         │    │
-│  │  Port 80/443                   │    │
-│  └──────────┬─────────────────────┘    │
-│             │                           │
-│  ┌──────────▼──────────┐  ┌──────────┐ │
-│  │  Vue.js Frontend    │  │  Backend │ │
-│  │  (Static Files)     │  │  API     │ │
-│  │                     │  │  Port    │ │
-│  │                     │  │  3000    │ │
-│  └─────────────────────┘  └────┬─────┘ │
-│                                 │       │
-│                          ┌──────▼─────┐ │
-│                          │   MySQL    │ │
-│                          │  Database  │ │
-│                          └────────────┘ │
+│  ┌────────────────────────────────┐     │
+│  │  Nginx (Reverse Proxy)         │     │
+│  │  Port 80/443                   │     │
+│  └──────────┬─────────────────────┘     │
+│             │                            │
+│  ┌──────────▼──────────┐  ┌──────────┐  │
+│  │  Vue.js Frontend    │  │  Backend │  │
+│  │  (Static Files)     │  │  API     │  │
+│  │                     │  │  Port    │  │
+│  │                     │  │  3002    │  │
+│  └─────────────────────┘  └────┬─────┘  │
+│                                │        │
+│                         ┌──────▼──────┐ │
+│                         │    MySQL    │ │
+│                         │  Database  │ │
+│                         └────────────┘ │
 └─────────────────────────────────────────┘
 ```
 
@@ -45,11 +45,7 @@ This guide will walk you through deploying your Pharmacy POS application (Vue.js
 ## 📦 Step 1: Connect to Your VPS
 
 ```bash
-# Connect via SSH
 ssh root@your_vps_ip
-
-# Or if you have a username
-ssh username@your_vps_ip
 ```
 
 ---
@@ -74,7 +70,7 @@ sudo npm install -g pm2
 # Install Nginx (if not already installed)
 sudo apt install nginx -y
 
-# Install MySQL client (if needed)
+# Install MySQL
 sudo apt install mysql-server -y
 sudo apt install mysql-client -y
 sudo systemctl status mysql
@@ -84,7 +80,6 @@ sudo systemctl start mysql
 ### 2.3 Configure Firewall
 
 ```bash
-# Allow SSH, HTTP, and HTTPS
 sudo ufw allow 22
 sudo ufw allow 80
 sudo ufw allow 443
@@ -119,18 +114,15 @@ sudo mysql -u root -p
 
 ```sql
 -- Create database
-CREATE DATABASE hasal_products;
+CREATE DATABASE lumicore_tracker CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- Create user (replace 'your_password' with a strong password)
-CREATE USER 'hasal_products'@'localhost' IDENTIFIED BY 'Velou@123';  pw - Velou@123
+-- Create user (replace 'Velou@123' with a strong password)
+CREATE USER 'lumicore_tracker'@'localhost' IDENTIFIED BY 'Velou@123';
 
 -- Grant privileges
-GRANT ALL PRIVILEGES ON hasal_products.* TO 'hasal_products'@'localhost';
+GRANT ALL PRIVILEGES ON lumicore_tracker.* TO 'lumicore_tracker'@'localhost';
 
--- Flush privileges
 FLUSH PRIVILEGES;
-
--- Exit MySQL
 EXIT;
 ```
 
@@ -141,49 +133,47 @@ EXIT;
 ### 4.1 Create Application Directory
 
 ```bash
-# Create directory for your app
-sudo mkdir -p /var/www/hasal_products
-cd /var/www/hasal_products
+sudo mkdir -p /var/www/lumicore_tracker
+cd /var/www/lumicore_tracker
 ```
 
-### 4.2 Clone Your Repository
+### 4.2 Clone the Repository
 
 ```bash
-# If your code is on GitHub
-sudo git clone https://github.com/MG4ACA/hasal-products-backend.git
+sudo git clone https://github.com/MG4ACA/expences-tracker.git 
 
-# Or upload your code using SCP from your local machine:
-# scp -r /path/to/pharmacy-standalone-pos root@your_vps_ip:/var/www/hasal_products
+cd expences-tracker
 ```
 
 ### 4.3 Set Correct Permissions
 
 ```bash
-# Change ownership
-sudo chown -R $USER:$USER /var/www/hasal_products
-
-# Set permissions
-sudo chmod -R 755 /var/www/hasal_products
+sudo chown -R $USER:$USER /var/www/lumicore_tracker
+sudo chmod -R 755 /var/www/lumicore_tracker
 ```
 
 ---
 
-cd hasal-products-backend
+### Updating an Existing Deployment
+
+```bash
+cd /var/www/lumicore_tracker/expences-tracker
 
 git fetch --all
-git branch
-git checkout 'your_branch'
-git pull origin dev
+git pull origin main
 
-if errors occur try below
-git reset --hard
+# If there are conflicts
+git reset --hard origin/main
+```
+
+---
 
 ## 🔨 Step 5: Set Up Backend
 
 ### 5.1 Navigate to Backend Directory
 
 ```bash
-cd /var/www/hasal_products/hasal-products-backend
+cd /var/www/lumicore_tracker/expences-tracker/backend
 ```
 
 ### 5.2 Install Dependencies
@@ -192,27 +182,32 @@ cd /var/www/hasal_products/hasal-products-backend
 npm install --production
 ```
 
-### 5.3 Configure Environment Variables
+### 5.3 Initialize Database Schema
 
 ```bash
-# Create .env file
+# Run the schema file to create all tables
+sudo mysql -u lumicore_tracker -p lumicore_tracker < database.sql
+```
+
+### 5.4 Configure Environment Variables
+
+```bash
 nano .env
 ```
 
-Add the following configuration:
+Add the following:
 
 ```env
 # Database Configuration
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=hasal_products
-DB_USER=hasal_products
+DB_NAME=lumicore_tracker
+DB_USER=lumicore_tracker
 DB_PASSWORD=Velou@123
 
 # Application
 NODE_ENV=production
-PORT=5000
-HOST=0.0.0.0
+PORT=3002
 
 # JWT Secret (generate a secure random string)
 JWT_SECRET=your_super_secret_jwt_key_here_change_this
@@ -220,68 +215,46 @@ JWT_SECRET=your_super_secret_jwt_key_here_change_this
 # JWT Expiration
 JWT_EXPIRES_IN=24h
 
-# CORS Configuration (comma-separated list of allowed origins)
-ALLOWED_ORIGINS=http://hasal-products.lumicore-labs.com/,https://hasal-products.lumicore-labs.com/
+# CORS Configuration
+ALLOWED_ORIGINS=https://tracker.lumicore-labs.com,http://tracker.lumicore-labs.com
 ```
 
-**To generate a secure JWT secret:**
+**Generate a secure JWT secret:**
 
 ```bash
 node -e "console.log(require('crypto').randomBytes(64).toString('hex'))"
 ```
 
-### 5.4 Initialize Database
-
-```bash
-# Create database tables and seed
-npm run db:init
-
-
-# If you have product CSV data
-npm run db:seed
-```
-
 ### 5.5 Test Backend Locally
 
 ```bash
-# Test if backend works
 npm start
 
 # In another terminal, test the API
-curl http://localhost:5000/api/health
+curl http://localhost:3002/api/health
 ```
 
-If successful, you should see a response. Press `Ctrl+C` to stop.
+You should see `{"status":"ok"}`. Press `Ctrl+C` to stop.
 
 ### 5.6 Set Up PM2 for Backend
 
 ```bash
-# Start backend with PM2
-pm2 start server.js --name hasal-products-backend
+# Start backend with PM2 (entry point is src/server.js)
+pm2 start src/server.js --name lumicore-tracker-backend
 
-# Save PM2 configuration
 pm2 save
 
-# Set PM2 to start on boot
 pm2 startup
 
-# Check status
 pm2 status
 ```
 
 **Useful PM2 Commands:**
 
 ```bash
-# View logs
-pm2 logs hasal-products-backend
-
-# Restart app
-pm2 restart hasal-products-backend
-
-# Stop app
-pm2 stop hasal-products-backend
-
-# Monitor
+pm2 logs lumicore-tracker-backend
+pm2 restart lumicore-tracker-backend
+pm2 stop lumicore-tracker-backend
 pm2 monit
 ```
 
@@ -291,43 +264,24 @@ pm2 monit
 
 ### 6.1 Navigate to Frontend Directory
 
-## clone frotend repo then
-
 ```bash
-cd /var/www/hasal_products/hasal_products-frontend
+cd /var/www/lumicore_tracker/expences-tracker/frontend
 ```
 
 ### 6.2 Configure API Endpoint
-
-create environment file:
 
 ```bash
 nano .env.production
 ```
 
 ```env
-VITE_API_BASE_URL=http://hasal-products.lumicore-labs.com/api
-```
-
-or Update the frontend to point to your backend API:
-
-```bash
-nano src/api/client.js
-```
-
-Update the base URL:
-
-```javascript
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://hasal-products.lumicore-labs.com/api';
+VITE_API_BASE_URL=https://tracker.lumicore-labs.com/api
 ```
 
 ### 6.3 Install Dependencies and Build
 
 ```bash
-# Install dependencies
 npm install
-
-# Build for production
 npm run build
 ```
 
@@ -336,15 +290,12 @@ This creates a `dist` folder with optimized static files.
 ### 6.4 Move Build to Nginx Directory
 
 ```bash
-# Create directory for frontend
-sudo mkdir -p /var/www/hasal_products/frontend
+sudo mkdir -p /var/www/lumicore_tracker/frontend
 
-# Copy built files
-sudo cp -r dist/* /var/www/hasal_products/frontend/
+sudo cp -r dist/* /var/www/lumicore_tracker/frontend/
 
-# Set permissions
-sudo chown -R www-data:www-data /var/www/hasal_products/frontend
-sudo chmod -R 755 /var/www/hasal_products/frontend
+sudo chown -R www-data:www-data /var/www/lumicore_tracker/frontend
+sudo chmod -R 755 /var/www/lumicore_tracker/frontend
 ```
 
 ---
@@ -354,33 +305,31 @@ sudo chmod -R 755 /var/www/hasal_products/frontend
 ### 7.1 Create Nginx Configuration
 
 ```bash
-sudo nano /etc/nginx/sites-available/hasal_products
+sudo nano /etc/nginx/sites-available/lumicore_tracker
 ```
 
 Add this configuration:
 
 ```nginx
-# Upstream backend
-upstream hasal_products_backend {
-    server localhost:4000;
+upstream lumicore_tracker_backend {
+    server localhost:3002;
     keepalive 64;
 }
 
 server {
     listen 80;
- server_name hasal-products.lumicore-labs.com www.hasal-products.lumicore-labs.com;
-    # Security headers
+    server_name tracker.lumicore-labs.com www.tracker.lumicore-labs.com;
+
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
 
     # Frontend - Serve Vue.js app
     location / {
-        root /var/www/hasal_products/frontend;
+        root /var/www/lumicore_tracker/frontend;
         index index.html;
         try_files $uri $uri/ /index.html;
 
-        # Cache static assets
         location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
             expires 1y;
             add_header Cache-Control "public, immutable";
@@ -389,10 +338,9 @@ server {
 
     # Backend API - Proxy to Express.js
     location /api/ {
-        proxy_pass http://hasal_products_backend/api/;
+        proxy_pass http://lumicore_tracker_backend/api/;
         proxy_http_version 1.1;
 
-        # Headers
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
         proxy_set_header Host $host;
@@ -400,49 +348,36 @@ server {
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
 
-        # Timeouts
         proxy_connect_timeout 60s;
         proxy_send_timeout 60s;
         proxy_read_timeout 60s;
 
-        # Disable cache for API
         proxy_cache_bypass $http_upgrade;
     }
 
-    # Health check endpoint
-    location /health {
-        proxy_pass http://hasal_products_backend/health;
-        access_log off;
-    }
-
-    # Logs
-    access_log /var/log/nginx/hasal_products-access.log;
-    error_log /var/log/nginx/hasal_products-error.log;
+    access_log /var/log/nginx/lumicore_tracker-access.log;
+    error_log /var/log/nginx/lumicore_tracker-error.log;
 }
 ```
 
 ### 7.2 Enable Site
 
 ```bash
-# Create symbolic link
-sudo ln -s /etc/nginx/sites-available/hasal_products /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/lumicore_tracker /etc/nginx/sites-enabled/
 
 # Remove default site (optional)
 sudo rm /etc/nginx/sites-enabled/default
 
-# Test Nginx configuration
 sudo nginx -t
 
-# Restart Nginx
 sudo systemctl restart nginx
-
-# Enable Nginx on boot
 sudo systemctl enable nginx
 ```
 
 ---
 
-## 🔒 Step 8: Set Up SSL (Optional but Recommended)
+## 🔒 Step 8: Set Up SSL (Recommended)
+
 ### 8.1 Install Certbot
 
 ```bash
@@ -451,18 +386,11 @@ sudo apt install certbot python3-certbot-nginx -y
 
 ### 8.2 Obtain SSL Certificate
 
-**Note:** You need a domain name pointed to your VPS IP for this step.
-
 ```bash
-# Replace with your domain
-sudo certbot --nginx -d hasal-products.lumicore-labs.com -d www.hasal-products.lumicore-labs.com
+sudo certbot --nginx -d tracker.lumicore-labs.com -d www.tracker.lumicore-labs.com
 ```
 
-Certbot will:
-
-- Obtain certificate
-- Automatically configure Nginx
-- Set up automatic renewal
+Certbot will obtain the certificate and automatically update your Nginx config for HTTPS.
 
 ### 8.3 Test Auto-Renewal
 
@@ -470,26 +398,20 @@ Certbot will:
 sudo certbot renew --dry-run
 ```
 
-### 8.4 Update Frontend API URL
+### 8.4 Rebuild Frontend with HTTPS URL
 
-After SSL is set up, update your frontend API URL to use HTTPS:
+After SSL is configured, ensure `.env.production` is using `https`:
 
-```bash
-nano /var/www/hasal_products/src/api/client.js
-```
-
-Change to:
-
-```javascript
-const API_BASE_URL = 'https://lumicore.trustyou-go.com/api';
+```env
+VITE_API_BASE_URL=https://tracker.lumicore-labs.com/api
 ```
 
 Rebuild and redeploy:
 
 ```bash
-cd /var/www/hasal_products
+cd /var/www/lumicore_tracker/expences-tracker/frontend
 npm run build
-sudo cp -r dist/* /var/www/hasal_products/frontend/
+sudo cp -r dist/* /var/www/lumicore_tracker/frontend/
 ```
 
 ---
@@ -499,86 +421,65 @@ sudo cp -r dist/* /var/www/hasal_products/frontend/
 ### 9.1 Check Backend
 
 ```bash
-# Check PM2 status
 pm2 status
-
-# Check backend logs
-pm2 logs hasal_products-backend
-
-# Test API directly
-curl http://localhost:3000/api/health
+pm2 logs lumicore-tracker-backend
+curl http://localhost:3002/api/health
 ```
 
 ### 9.2 Check Nginx
 
 ```bash
-# Check Nginx status
 sudo systemctl status nginx
-
-# Check Nginx logs
-sudo tail -f /var/log/nginx/hasal_products-error.log
+sudo tail -f /var/log/nginx/lumicore_tracker-error.log
 ```
 
 ### 9.3 Test Application
 
-Open your browser and visit:
+Open your browser and visit `https://tracker.lumicore-labs.com`.
 
-- `http://your_vps_ip` (or `https://yourdomain.com`)
-
-You should see your Pharmacy POS login page!
+You should see the Lumicore Tracker login page.
 
 ---
 
 ## 🔄 Step 10: Deployment Script (For Updates)
 
-Create a deployment script for easy updates:
-
 ```bash
-nano /var/www/hasal_products/deploy.sh
+nano /var/www/lumicore_tracker/deploy.sh
 ```
 
 ```bash
 #!/bin/bash
 
-echo "🚀 Starting deployment..."
+echo "🚀 Starting Lumicore Tracker deployment..."
 
-# Navigate to project directory
-cd /var/www/hasal_products
+cd /var/www/lumicore_tracker/expences-tracker
 
-# Pull latest changes (if using Git)
 echo "📥 Pulling latest changes..."
+git fetch --all
 git pull origin main
 
-# Backend deployment
 echo "🔨 Deploying backend..."
-cd backend-project
+cd backend
 npm install --production
-pm2 restart hasal_products-backend
+pm2 restart lumicore-tracker-backend
 
-# Frontend deployment
-echo "🎨 Deploying frontend..."
-cd ..
+echo "🎨 Building frontend..."
+cd ../frontend
 npm install
 npm run build
-sudo cp -r dist/* /var/www/hasal_products/frontend/
+sudo cp -r dist/* /var/www/lumicore_tracker/frontend/
 
-# Restart Nginx
 echo "🌐 Restarting Nginx..."
 sudo systemctl restart nginx
 
 echo "✅ Deployment complete!"
 ```
 
-Make it executable:
-
 ```bash
-chmod +x /var/www/hasal_products/deploy.sh
-```
+chmod +x /var/www/lumicore_tracker/deploy.sh
 
-Run deployment:
-
-```bash
-./deploy.sh
+# Run deployment
+/var/www/lumicore_tracker/deploy.sh
 ```
 
 ---
@@ -588,44 +489,33 @@ Run deployment:
 ### Check Application Status
 
 ```bash
-# Check all services
 pm2 status
 sudo systemctl status nginx
 sudo systemctl status mysql
 
-# Check disk space
-df -h
-
-# Check memory usage
-free -m
+df -h       # Disk space
+free -m     # Memory usage
 ```
 
 ### View Logs
 
 ```bash
-# Backend logs
-pm2 logs hasal_products-backend
+pm2 logs lumicore-tracker-backend
 
-# Nginx access logs
-sudo tail -f /var/log/nginx/hasal_products-access.log
-
-# Nginx error logs
-sudo tail -f /var/log/nginx/hasal_products-error.log
-
-# MySQL logs
+sudo tail -f /var/log/nginx/lumicore_tracker-access.log
+sudo tail -f /var/log/nginx/lumicore_tracker-error.log
 sudo tail -f /var/log/mysql/error.log
 ```
 
 ### Backup Database
 
 ```bash
-# Create backup directory
 mkdir -p ~/backups
 
-# Backup database
-mysqldump -u ape_news_user -p ape_news > ~/backups/ape_news_$(date +%Y%m%d_%H%M%S).sql
+# Manual backup
+mysqldump -u lumicore_tracker -p lumicore_tracker > ~/backups/lumicore_tracker_$(date +%Y%m%d_%H%M%S).sql
 
-# Create automated backup script
+# Automated backup script
 nano ~/backup-db.sh
 ```
 
@@ -633,16 +523,16 @@ nano ~/backup-db.sh
 #!/bin/bash
 BACKUP_DIR=~/backups
 mkdir -p $BACKUP_DIR
-mysqldump -u ape_news_user -p'your_password' ape_news > $BACKUP_DIR/ape_news_$(date +%Y%m%d_%H%M%S).sql
+mysqldump -u lumicore_tracker -p'Velou@123' lumicore_tracker > $BACKUP_DIR/lumicore_tracker_$(date +%Y%m%d_%H%M%S).sql
 
 # Keep only last 7 days of backups
-find $BACKUP_DIR -name "ape_news_*.sql" -mtime +7 -delete
+find $BACKUP_DIR -name "lumicore_tracker_*.sql" -mtime +7 -delete
 ```
 
 ```bash
 chmod +x ~/backup-db.sh
 
-# Add to crontab for daily backups at 2 AM
+# Daily backup at 2 AM
 crontab -e
 # Add: 0 2 * * * /home/username/backup-db.sh
 ```
@@ -654,83 +544,57 @@ crontab -e
 ### Backend Not Starting
 
 ```bash
-# Check logs
-pm2 logs hasal-products-backend
+pm2 logs lumicore-tracker-backend
 
-# Common issues:
-# 1. Port 3000 already in use
-sudo lsof -i :3000
+# Port 3002 already in use
+sudo lsof -i :3002
 sudo kill -9 <PID>
 
-# 2. Database connection failed
-# Check .env file and MySQL credentials
-mysql -u ape_news_user -p ape_news
+# Test DB connection
+mysql -u lumicore_tracker -p lumicore_tracker
 ```
 
 ### Frontend Not Loading
 
 ```bash
-# Check Nginx error logs
-sudo tail -f /var/log/nginx/hasal_products-error.log
+sudo tail -f /var/log/nginx/lumicore_tracker-error.log
 
-# Verify files exist
-ls -la /var/www/hasal_products/frontend
+ls -la /var/www/lumicore_tracker/frontend
 
-# Test Nginx configuration
 sudo nginx -t
-
-# Restart Nginx
 sudo systemctl restart nginx
 ```
 
 ### 502 Bad Gateway
 
 ```bash
-# Backend is not running
 pm2 status
-pm2 restart hasal_products-backend
+pm2 restart lumicore-tracker-backend
 
-# Check backend is listening on port 3000
-sudo netstat -tlnp | grep 3000
+# Confirm backend is listening on port 3002
+sudo netstat -tlnp | grep 3002
 ```
 
 ### Database Connection Issues
 
 ```bash
-# Test MySQL connection
-mysql -u ape_news_user -p ape_news
+mysql -u lumicore_tracker -p lumicore_tracker
 
-# Check MySQL is running
 sudo systemctl status mysql
-
-# Restart MySQL
 sudo systemctl restart mysql
 
-# Check backend .env file
-cat backend-project/.env
+cat /var/www/lumicore_tracker/expences-tracker/backend/.env
 ```
 
 ---
 
 ## 📊 Monitoring Setup (Optional)
 
-### Install Monitoring Tools
-
 ```bash
-# Install htop for resource monitoring
 sudo apt install htop -y
 
-# Use PM2 monitoring
 pm2 install pm2-server-monit
-```
-
-### Set Up PM2 Web Dashboard
-
-```bash
-# Install PM2 web interface
-pm2 install pm2-web
-
-# Access at: http://your_vps_ip:9615
+pm2 monit
 ```
 
 ---
@@ -739,13 +603,11 @@ pm2 install pm2-web
 
 ### Enable Gzip Compression in Nginx
 
-Edit `/etc/nginx/nginx.conf`:
-
 ```bash
 sudo nano /etc/nginx/nginx.conf
 ```
 
-Add inside `http` block:
+Add inside the `http` block:
 
 ```nginx
 gzip on;
@@ -755,12 +617,10 @@ gzip_comp_level 6;
 gzip_types text/plain text/css text/xml text/javascript application/json application/javascript application/xml+rss application/rss+xml font/truetype font/opentype application/vnd.ms-fontobject image/svg+xml;
 ```
 
-### Configure Node.js for Production
-
-In PM2 configuration:
+### PM2 Production Start
 
 ```bash
-pm2 start src/index.js --name hasal_products-backend -i max --node-args="--max-old-space-size=1024"
+pm2 start src/server.js --name lumicore-tracker-backend -i max --node-args="--max-old-space-size=1024"
 ```
 
 ---
@@ -774,48 +634,22 @@ pm2 start src/index.js --name hasal_products-backend -i max --node-args="--max-o
 
 ---
 
-## 📞 Support
-
-If you encounter issues:
-
-1. Check logs first (`pm2 logs`, nginx logs)
-2. Verify all services are running
-3. Check firewall settings
-4. Review configuration files
-5. Restart services in order: MySQL → Backend → Nginx
-
----
-
-## 🎉 Congratulations!
-
-Your Pharmacy POS System is now live on Hostinger VPS!
-
-**Access your application at:**
-
-- 🌐 Frontend: `http://your_vps_ip` or `https://yourdomain.com`
-- 🔌 Backend API: `http://your_vps_ip/api` or `https://yourdomain.com/api`
-
-**Default Login (if using seed data):**
-
-- Username: `admin`
-- Password: Check your seed file
-
----
-
 ## 📝 Post-Deployment Checklist
 
-- [ ] Backend is running via PM2
-- [ ] Database is created and seeded
+- [ ] Backend is running via PM2 (`pm2 status`)
+- [ ] Database `lumicore_tracker` is created and schema applied
 - [ ] Frontend is built and served by Nginx
-- [ ] API endpoints are accessible
-- [ ] Application login works
-- [ ] SSL certificate is installed (if using domain)
-- [ ] Firewall is configured
-- [ ] Backups are automated
-- [ ] Monitoring is set up
+- [ ] API health check responds: `curl http://localhost:3002/api/health`
+- [ ] Application login works at `https://tracker.lumicore-labs.com`
+- [ ] SSL certificate is installed
+- [ ] Firewall is configured (`ufw status`)
+- [ ] Backups are automated (crontab)
 - [ ] Deployment script is ready
 
 ---
 
-**Last Updated:** December 2024  
+**Project:** Lumicore Tracker  
+**Repo:** https://github.com/MG4ACA/expences-tracker  
+**Domain:** tracker.lumicore-labs.com  
+**Last Updated:** February 2026  
 **Version:** 1.0.0

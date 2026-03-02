@@ -37,12 +37,14 @@ export function useFinance() {
   }
 
   async function loadAll(params = {}) {
-    const [recs, sum] = await Promise.all([
-      financeApi.getRecords(params),
-      financeApi.getSummary(params.month),
-    ]);
-    records.value = recs;
-    summary.value = sum;
+    await call(async () => {
+      const [recs, sum] = await Promise.all([
+        financeApi.getRecords(params),
+        financeApi.getSummary(params.month),
+      ]);
+      records.value = recs ?? [];
+      summary.value = sum ?? { income: 0, expense: 0, net: 0 };
+    });
   }
 
   async function createRecord(data) {

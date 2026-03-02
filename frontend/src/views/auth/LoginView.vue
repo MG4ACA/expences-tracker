@@ -39,6 +39,16 @@
             :loading="loading"
             class="w-full mt-1"
           />
+          <Button
+            type="button"
+            label="Fill Sample Data"
+            icon="pi pi-bolt"
+            text
+            severity="secondary"
+            size="small"
+            class="w-full"
+            @click="fillSample"
+          />
         </div>
       </form>
     </div>
@@ -61,6 +71,11 @@ const email = ref('');
 const password = ref('');
 const loading = ref(false);
 const error = ref('');
+
+function fillSample() {
+  email.value = 'admin@lumicorelabs.com';
+  password.value = 'admin123';
+}
 
 async function handleLogin() {
   if (!email.value || !password.value) {

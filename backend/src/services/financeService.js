@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { buildUpdate } = require('../utils/dbHelpers');
 
 // ── Categories ────────────────────────────────────────────────────
 
@@ -67,11 +68,16 @@ async function createRecord(userId, { category_id, type, amount, description, da
   return result.insertId;
 }
 
-async function updateRecord(id, userId, { category_id, type, amount, description, date }) {
-  await db.query(
-    'UPDATE finance_records SET category_id=?, type=?, amount=?, description=?, date=? WHERE id=? AND user_id=?',
-    [category_id, type, amount, description, date, id, userId],
-  );
+async function updateRecord(id, userId, data) {
+  const allowed = ['category_id', 'type', 'amount', 'description', 'date'];
+  const fields = {};
+  for (const key of allowed) if (data[key] !== undefined) fields[key] = data[key];
+  const { set, values } = buildUpdate(fields);
+  await db.query(`UPDATE finance_records SET ${set} WHERE id = ? AND user_id = ?`, [
+    ...values,
+    id,
+    userId,
+  ]);
 }
 
 async function deleteRecord(id, userId) {

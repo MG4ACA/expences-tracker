@@ -90,6 +90,16 @@
       style="width: 440px"
     >
       <div class="flex flex-column gap-3 pt-2">
+        <div class="flex justify-content-end">
+          <Button
+            label="Fill Sample Data"
+            icon="pi pi-bolt"
+            size="small"
+            text
+            severity="secondary"
+            @click="fillSample"
+          />
+        </div>
         <div>
           <label class="text-sm font-medium block mb-1">Title *</label>
           <InputText v-model="form.title" class="w-full" />
@@ -199,6 +209,18 @@ function openDialog(item = null) {
     : emptyForm();
   clearError();
   dialogVisible.value = true;
+}
+
+function fillSample() {
+  const due = new Date();
+  due.setDate(due.getDate() + 3);
+  form.value = {
+    title: 'Follow up with Colombo Hair Studio',
+    description: 'Call back to confirm interest and send website package pricing.',
+    priority: 'high',
+    status: 'pending',
+    due_date: due,
+  };
 }
 
 async function save() {

@@ -47,52 +47,82 @@
       <Button label="Add Record" icon="pi pi-plus" @click="openDialog()" />
     </div>
 
-    <!-- Records table -->
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-      <DataTable
-        :value="records"
-        :loading="loading"
-        striped-rows
-        paginator
-        :rows="20"
-        responsive-layout="scroll"
+    <!-- Finance record cards -->
+    <div class="flex flex-column gap-2">
+      <div v-if="loading" class="text-center py-6 text-gray-400">
+        <i class="pi pi-spin pi-spinner text-4xl mb-3 block"></i>
+        Loading…
+      </div>
+      <div v-else-if="records.length === 0" class="text-center py-6 text-gray-400">
+        <i class="pi pi-wallet text-4xl mb-3 block"></i>
+        No records for this period.
+      </div>
+
+      <div
+        v-for="rec in records"
+        :key="rec.id"
+        class="surface-card p-3 border-round-xl shadow-1 flex align-items-start gap-3"
       >
-        <Column field="date" header="Date" sortable style="width: 100px">
-          <template #body="{ data }">{{ formatDate(data.date) }}</template>
-        </Column>
-        <Column field="type" header="Type">
-          <template #body="{ data }">
-            <Tag :value="data.type" :severity="data.type === 'income' ? 'success' : 'danger'" />
-          </template>
-        </Column>
-        <Column field="category_name" header="Category" />
-        <Column field="description" header="Description" />
-        <Column field="amount" header="Amount" sortable style="width: 120px">
-          <template #body="{ data }">
+        <!-- Type icon -->
+        <div
+          class="flex align-items-center justify-content-center border-round-lg"
+          :class="rec.type === 'income' ? 'bg-green-50' : 'bg-red-50'"
+          style="width: 40px; height: 40px; flex-shrink: 0"
+        >
+          <i
+            :class="
+              rec.type === 'income'
+                ? 'pi pi-arrow-down text-green-500'
+                : 'pi pi-arrow-up text-red-500'
+            "
+          ></i>
+        </div>
+
+        <!-- Content -->
+        <div class="flex-1 min-w-0">
+          <div class="flex align-items-center gap-2 flex-wrap">
             <span
-              :class="data.type === 'income' ? 'text-green-600' : 'text-red-500'"
-              class="font-medium"
+              class="font-semibold"
+              :class="rec.type === 'income' ? 'text-green-600' : 'text-red-500'"
             >
-              {{ fmt(data.amount) }}
+              {{ fmt(rec.amount) }}
             </span>
-          </template>
-        </Column>
-        <Column header="" style="width: 80px">
-          <template #body="{ data }">
-            <div class="flex gap-1">
-              <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(data)" />
-              <Button
-                icon="pi pi-trash"
-                text
-                rounded
-                size="small"
-                severity="danger"
-                @click="deleteRecord_(data.id)"
-              />
-            </div>
-          </template>
-        </Column>
-      </DataTable>
+            <Tag
+              :value="rec.type"
+              :severity="rec.type === 'income' ? 'success' : 'danger'"
+              style="font-size: 0.7rem"
+            />
+            <Tag
+              v-if="rec.category_name"
+              :value="rec.category_name"
+              severity="secondary"
+              style="font-size: 0.7rem"
+            />
+          </div>
+          <div class="flex gap-3 flex-wrap mt-1">
+            <span v-if="rec.description" class="text-sm text-gray-500 truncate">
+              {{ rec.description }}
+            </span>
+            <span class="text-xs text-gray-400">
+              <i class="pi pi-calendar mr-1"></i>
+              {{ formatDate(rec.date) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-1">
+          <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(rec)" />
+          <Button
+            icon="pi pi-trash"
+            text
+            rounded
+            size="small"
+            severity="danger"
+            @click="deleteRecord_(rec.id)"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Add/Edit Dialog -->
@@ -103,6 +133,16 @@
       style="width: 420px"
     >
       <div class="flex flex-column gap-3 pt-2">
+        <div class="flex justify-content-end">
+          <Button
+            label="Fill Sample Data"
+            icon="pi pi-bolt"
+            size="small"
+            text
+            severity="secondary"
+            @click="fillSample"
+          />
+        </div>
         <div class="grid">
           <div class="col-6">
             <label class="text-sm font-medium block mb-1">Type *</label>
@@ -154,8 +194,6 @@
 import { useFinance } from '@/composables/useFinance';
 import Button from 'primevue/button';
 import Calendar from 'primevue/calendar';
-import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 import InputNumber from 'primevue/inputnumber';
@@ -226,6 +264,25 @@ function openDialog(item = null) {
   form.value = item ? { ...item, date: new Date(item.date) } : emptyForm();
   clearError();
   dialogVisible.value = true;
+}
+
+function fillSample() {
+  const incomecat = categories.value.find((c) => c.type === 'income');
+  const expensecat = categories.value.find((c) => c.type === 'expense');
+  form.value = {
+    type: 'income',
+    category_id: incomecat?.id ?? null,
+    amount: 75000,
+    description: 'Project payment — Lumicore Labs website build',
+    date: new Date(),
+  };
+  // If no income category exists, try expense as fallback
+  if (!incomecat && expensecat) {
+    form.value.type = 'expense';
+    form.value.category_id = expensecat.id;
+    form.value.amount = 3500;
+    form.value.description = 'Office supplies';
+  }
 }
 
 async function save() {

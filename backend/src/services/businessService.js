@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { buildUpdate } = require('../utils/dbHelpers');
 
 async function getAll(userId, isAdmin) {
   if (isAdmin) {
@@ -54,14 +55,23 @@ async function create(
   return result.insertId;
 }
 
-async function update(
-  id,
-  { name, type, phone, address, city, google_maps_url, website, status, assigned_to, notes },
-) {
-  await db.query(
-    'UPDATE businesses SET name=?, type=?, phone=?, address=?, city=?, google_maps_url=?, website=?, status=?, assigned_to=?, notes=? WHERE id=?',
-    [name, type, phone, address, city, google_maps_url, website, status, assigned_to, notes, id],
-  );
+async function update(id, data) {
+  const allowed = [
+    'name',
+    'type',
+    'phone',
+    'address',
+    'city',
+    'google_maps_url',
+    'website',
+    'status',
+    'assigned_to',
+    'notes',
+  ];
+  const fields = {};
+  for (const key of allowed) if (data[key] !== undefined) fields[key] = data[key];
+  const { set, values } = buildUpdate(fields);
+  await db.query(`UPDATE businesses SET ${set} WHERE id = ?`, [...values, id]);
 }
 
 async function remove(id) {

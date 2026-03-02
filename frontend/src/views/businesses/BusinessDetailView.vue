@@ -85,6 +85,16 @@
     <!-- Log Call Dialog -->
     <Dialog v-model:visible="callDialog" header="Log a Call" modal style="width: 420px">
       <div class="flex flex-column gap-3 pt-2">
+        <div class="flex justify-content-end">
+          <Button
+            label="Fill Sample Data"
+            icon="pi pi-bolt"
+            size="small"
+            text
+            severity="secondary"
+            @click="fillSampleCall"
+          />
+        </div>
         <div>
           <label class="text-sm font-medium block mb-1">Call Date *</label>
           <Calendar v-model="callForm.call_date" class="w-full" date-format="yy-mm-dd" />
@@ -207,6 +217,17 @@ function toDateStr(v) {
 
 async function updateStatus() {
   await updateCurrent({ status: business.value.status });
+}
+
+function fillSampleCall() {
+  const nextWeek = new Date();
+  nextWeek.setDate(nextWeek.getDate() + 7);
+  callForm.value = {
+    call_date: new Date(),
+    outcome: 'interested',
+    notes: 'Spoke to the manager — showed strong interest in a website package. Requested a quote.',
+    next_followup: nextWeek,
+  };
 }
 
 async function saveCall() {

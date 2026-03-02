@@ -4,35 +4,66 @@
       <Button label="Add User" icon="pi pi-user-plus" @click="openDialog()" />
     </div>
 
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-      <DataTable :value="users" :loading="loading" striped-rows responsive-layout="scroll">
-        <Column field="name" header="Name" sortable />
-        <Column field="email" header="Email" sortable />
-        <Column field="role" header="Role">
-          <template #body="{ data }">
-            <Tag :value="data.role" :severity="data.role === 'admin' ? 'danger' : 'info'" />
-          </template>
-        </Column>
-        <Column field="created_at" header="Created" sortable>
-          <template #body="{ data }">{{ formatDate(data.created_at) }}</template>
-        </Column>
-        <Column header="Actions" style="width: 100px">
-          <template #body="{ data }">
-            <div class="flex gap-1">
-              <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(data)" />
-              <Button
-                icon="pi pi-trash"
-                text
-                rounded
-                size="small"
-                severity="danger"
-                @click="confirmDelete(data)"
-                :disabled="data.id === currentUserId"
-              />
-            </div>
-          </template>
-        </Column>
-      </DataTable>
+    <!-- User cards -->
+    <div class="flex flex-column gap-2">
+      <div v-if="loading" class="text-center py-6 text-gray-400">
+        <i class="pi pi-spin pi-spinner text-4xl mb-3 block"></i>
+        Loading…
+      </div>
+      <div v-else-if="users.length === 0" class="text-center py-6 text-gray-400">
+        <i class="pi pi-users text-4xl mb-3 block"></i>
+        No users found.
+      </div>
+
+      <div
+        v-for="user in users"
+        :key="user.id"
+        class="surface-card p-3 border-round-xl shadow-1 flex align-items-start gap-3"
+      >
+        <!-- Avatar -->
+        <div
+          class="flex align-items-center justify-content-center border-round-lg surface-100 font-bold text-primary"
+          style="width: 40px; height: 40px; flex-shrink: 0; font-size: 1rem"
+        >
+          {{ user.name?.charAt(0).toUpperCase() }}
+        </div>
+
+        <!-- Info -->
+        <div class="flex-1 min-w-0">
+          <div class="flex align-items-center gap-2 flex-wrap">
+            <span class="font-semibold">{{ user.name }}</span>
+            <Tag
+              :value="user.role"
+              :severity="user.role === 'admin' ? 'danger' : 'info'"
+              style="font-size: 0.7rem"
+            />
+          </div>
+          <div class="flex gap-3 flex-wrap mt-1">
+            <span class="text-sm text-gray-500">
+              <i class="pi pi-envelope mr-1"></i>
+              {{ user.email }}
+            </span>
+            <span class="text-xs text-gray-400">
+              <i class="pi pi-calendar mr-1"></i>
+              Joined {{ formatDate(user.created_at) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-1">
+          <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(user)" />
+          <Button
+            icon="pi pi-trash"
+            text
+            rounded
+            size="small"
+            severity="danger"
+            :disabled="user.id === currentUserId"
+            @click="confirmDelete(user)"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Add/Edit Dialog -->
@@ -43,6 +74,16 @@
       style="width: 400px"
     >
       <div class="flex flex-column gap-3 pt-2">
+        <div class="flex justify-content-end">
+          <Button
+            label="Fill Sample Data"
+            icon="pi pi-bolt"
+            size="small"
+            text
+            severity="secondary"
+            @click="fillSample"
+          />
+        </div>
         <div>
           <label class="text-sm font-medium block mb-1">Name *</label>
           <InputText v-model="form.name" class="w-full" />
@@ -90,8 +131,6 @@
 import { useUsers } from '@/composables/useUsers';
 import { useAuthStore } from '@/stores/auth';
 import Button from 'primevue/button';
-import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
@@ -126,6 +165,15 @@ function openDialog(item = null) {
     : emptyForm();
   clearError();
   dialogVisible.value = true;
+}
+
+function fillSample() {
+  form.value = {
+    name: 'Kasun Perera',
+    email: 'kasun@lumicorelabs.com',
+    password: 'test1234',
+    role: 'employee',
+  };
 }
 
 async function save() {

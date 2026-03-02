@@ -17,52 +17,76 @@
       <Button label="Add Business" icon="pi pi-plus" @click="openDialog()" />
     </div>
 
-    <!-- Table -->
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
-      <DataTable
-        :value="filteredBusinesses"
-        :loading="loading"
-        stripedRows
-        paginator
-        :rows="15"
-        responsive-layout="scroll"
+    <!-- Business cards -->
+    <div class="flex flex-column gap-2">
+      <div v-if="loading" class="text-center py-6 text-gray-400">
+        <i class="pi pi-spin pi-spinner text-4xl mb-3 block"></i>
+        Loading…
+      </div>
+      <div v-else-if="filteredBusinesses.length === 0" class="text-center py-6 text-gray-400">
+        <i class="pi pi-building text-4xl mb-3 block"></i>
+        No businesses found.
+      </div>
+
+      <div
+        v-for="biz in filteredBusinesses"
+        :key="biz.id"
+        class="surface-card p-3 border-round-xl shadow-1 flex align-items-start gap-3"
       >
-        <Column field="name" header="Business" sortable>
-          <template #body="{ data }">
+        <!-- Icon -->
+        <div
+          class="flex align-items-center justify-content-center border-round-lg surface-100"
+          style="width: 40px; height: 40px; flex-shrink: 0"
+        >
+          <i class="pi pi-building text-primary"></i>
+        </div>
+
+        <!-- Main content -->
+        <div class="flex-1 min-w-0">
+          <div class="flex align-items-center gap-2 flex-wrap">
             <RouterLink
-              :to="`/businesses/${data.id}`"
-              class="font-medium text-primary no-underline"
+              :to="`/businesses/${biz.id}`"
+              class="font-semibold text-primary no-underline"
             >
-              {{ data.name }}
+              {{ biz.name }}
             </RouterLink>
-          </template>
-        </Column>
-        <Column field="type" header="Type" sortable />
-        <Column field="city" header="City" sortable />
-        <Column field="phone" header="Phone" />
-        <Column field="status" header="Status" sortable>
-          <template #body="{ data }">
-            <Tag :value="data.status" :severity="statusSeverity(data.status)" />
-          </template>
-        </Column>
-        <Column field="assigned_name" header="Assigned To" />
-        <Column header="Actions" style="width: 100px">
-          <template #body="{ data }">
-            <div class="flex gap-1">
-              <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(data)" />
-              <Button
-                v-if="auth.isAdmin"
-                icon="pi pi-trash"
-                text
-                rounded
-                size="small"
-                severity="danger"
-                @click="confirmDelete(data)"
-              />
-            </div>
-          </template>
-        </Column>
-      </DataTable>
+            <Tag
+              :value="biz.status"
+              :severity="statusSeverity(biz.status)"
+              style="font-size: 0.7rem"
+            />
+            <Tag v-if="biz.type" :value="biz.type" severity="secondary" style="font-size: 0.7rem" />
+          </div>
+          <div class="flex gap-3 flex-wrap mt-1">
+            <span v-if="biz.city" class="text-sm text-gray-500">
+              <i class="pi pi-map-marker mr-1"></i>
+              {{ biz.city }}
+            </span>
+            <span v-if="biz.phone" class="text-sm text-gray-500">
+              <i class="pi pi-phone mr-1"></i>
+              {{ biz.phone }}
+            </span>
+            <span v-if="biz.assigned_name" class="text-sm text-gray-500">
+              <i class="pi pi-user mr-1"></i>
+              {{ biz.assigned_name }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex gap-1">
+          <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(biz)" />
+          <Button
+            v-if="auth.isAdmin"
+            icon="pi pi-trash"
+            text
+            rounded
+            size="small"
+            severity="danger"
+            @click="confirmDelete(biz)"
+          />
+        </div>
+      </div>
     </div>
 
     <!-- Add/Edit Dialog -->
@@ -74,6 +98,16 @@
       style="max-width: 560px"
     >
       <div class="flex flex-column gap-3 pt-2">
+        <div class="flex justify-content-end">
+          <Button
+            label="Fill Sample Data"
+            icon="pi pi-bolt"
+            size="small"
+            text
+            severity="secondary"
+            @click="fillSample"
+          />
+        </div>
         <div class="grid">
           <div class="col-12">
             <label class="text-sm font-medium block mb-1">Business Name *</label>
@@ -134,8 +168,6 @@
 import { useBusinesses } from '@/composables/useBusinesses';
 import { useAuthStore } from '@/stores/auth';
 import Button from 'primevue/button';
-import Column from 'primevue/column';
-import DataTable from 'primevue/datatable';
 import Dialog from 'primevue/dialog';
 import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
@@ -205,6 +237,20 @@ function openDialog(item = null) {
   form.value = item ? { ...item } : emptyForm();
   clearError();
   dialogVisible.value = true;
+}
+
+function fillSample() {
+  form.value = {
+    name: 'Colombo Hair Studio',
+    type: 'Saloon',
+    phone: '0771234567',
+    address: '45 Galle Road, Colombo 03',
+    city: 'Colombo',
+    google_maps_url: 'https://maps.google.com/?q=Colombo+Hair+Studio',
+    website: '',
+    status: 'new',
+    notes: 'No website found. Owner expressed interest when visited in person.',
+  };
 }
 
 async function save() {

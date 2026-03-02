@@ -1,5 +1,6 @@
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
+const { buildUpdate } = require('../utils/dbHelpers');
 
 async function getAll() {
   const [rows] = await db.query(
@@ -18,18 +19,13 @@ async function create({ name, email, password, role }) {
 }
 
 async function update(id, { name, email, role, password }) {
-  if (password) {
-    const hashed = await bcrypt.hash(password, 10);
-    await db.query('UPDATE users SET name=?, email=?, role=?, password=? WHERE id=?', [
-      name,
-      email,
-      role,
-      hashed,
-      id,
-    ]);
-  } else {
-    await db.query('UPDATE users SET name=?, email=?, role=? WHERE id=?', [name, email, role, id]);
-  }
+  const fields = {};
+  if (name !== undefined) fields.name = name;
+  if (email !== undefined) fields.email = email;
+  if (role !== undefined) fields.role = role;
+  if (password !== undefined) fields.password = await bcrypt.hash(password, 10);
+  const { set, values } = buildUpdate(fields);
+  await db.query(`UPDATE users SET ${set} WHERE id = ?`, [...values, id]);
 }
 
 async function remove(id) {

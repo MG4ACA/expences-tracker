@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { buildUpdate } = require('../utils/dbHelpers');
 
 async function getAll(userId, { status, date } = {}) {
   let query = 'SELECT * FROM todos WHERE user_id = ?';
@@ -26,11 +27,12 @@ async function create(userId, { title, description, priority, due_date }) {
   return result.insertId;
 }
 
-async function update(id, userId, { title, description, status, priority, due_date }) {
-  await db.query(
-    'UPDATE todos SET title=?, description=?, status=?, priority=?, due_date=? WHERE id=? AND user_id=?',
-    [title, description, status, priority, due_date, id, userId],
-  );
+async function update(id, userId, data) {
+  const allowed = ['title', 'description', 'status', 'priority', 'due_date'];
+  const fields = {};
+  for (const key of allowed) if (data[key] !== undefined) fields[key] = data[key];
+  const { set, values } = buildUpdate(fields);
+  await db.query(`UPDATE todos SET ${set} WHERE id = ? AND user_id = ?`, [...values, id, userId]);
 }
 
 async function remove(id, userId) {
