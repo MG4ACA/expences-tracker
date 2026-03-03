@@ -18,6 +18,7 @@ const db = require('../src/config/db');
 
 const SEEDERS_DIR = __dirname;
 const FLAG = process.argv[2];
+const mysql = require('mysql2/promise');
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +33,62 @@ function skip(msg) {
 }
 function err(msg) {
   console.error(`  ✗ ${msg}`);
+}
+
+async function ensureDatabase() {
+  // Create database if it doesn't exist (using a temporary connection without database)
+  const tempConnection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+  });
+
+  try {
+    await tempConnection.query(`CREATE DATABASE IF NOT EXISTS \`${process.env.DB_NAME}\``);
+    log(`Database '${process.env.DB_NAME}' is ready.`);
+  } catch (e) {
+    err(`Failed to create database: ${e.message}`);
+    throw e;
+  } finally {
+    await tempConnection.end();
+  }
+}
+
+async function executeDatabaseSchema() {
+  // Execute the database schema file to create tables if they don't exist
+  const schemaPath = path.join(__dirname, '../database.sql');
+
+  if (!fs.existsSync(schemaPath)) {
+    err(`Database schema file not found: ${schemaPath}`);
+    throw new Error('database.sql not found');
+  }
+
+  const tempConnection = await mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    multipleStatements: true,
+  });
+
+  try {
+    let sql = fs.readFileSync(schemaPath, 'utf-8');
+
+    // Remove the USE statement since we're already connected to the database
+    sql = sql.replace(/USE\s+`?[\w]+`?;/gi, '');
+
+    // Remove comments
+    sql = sql.replace(/--.*$/gm, '');
+
+    // Execute all statements at once
+    await tempConnection.query(sql);
+    log('Database schema initialized.');
+  } catch (e) {
+    err(`Failed to execute database schema: ${e.message}`);
+    throw e;
+  } finally {
+    await tempConnection.end();
+  }
 }
 
 async function ensureHistoryTable() {
@@ -129,6 +186,8 @@ async function fresh() {
 
 (async () => {
   try {
+    await ensureDatabase();
+    await executeDatabaseSchema();
     if (FLAG === '--status') await status();
     else if (FLAG === '--fresh') await fresh();
     else await runPending();

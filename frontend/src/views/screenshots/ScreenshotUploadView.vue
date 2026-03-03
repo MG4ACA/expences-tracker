@@ -19,8 +19,9 @@
       />
     </div>
 
-    <!-- Drop zone -->
+    <!-- Drop zone (shown when no files are staged) -->
     <div
+      v-if="selectedFiles.length === 0"
       class="drop-zone border-round-2xl text-center"
       :class="{ 'is-dragging': isDragging }"
       @dragover.prevent="isDragging = true"
@@ -47,77 +48,122 @@
           @click.stop="fileInput.click()"
         />
       </div>
-      <input
-        ref="fileInput"
-        type="file"
-        accept="image/*"
-        multiple
-        style="display: none"
-        @change="onFileSelect"
-      />
     </div>
 
-    <!-- File grid + actions -->
-    <div v-if="selectedFiles.length > 0" class="surface-card border-round-xl p-4">
-      <div class="flex align-items-center justify-content-between mb-3">
-        <span class="font-semibold text-sm flex align-items-center gap-2">
-          <i class="pi pi-images text-primary"></i>
-          {{ selectedFiles.length }} file{{ selectedFiles.length !== 1 ? 's' : '' }} selected
-        </span>
-        <Button
-          label="Clear all"
-          icon="pi pi-trash"
-          text
-          severity="secondary"
-          size="small"
-          @click="clearFiles"
-          :disabled="uploading"
-        />
-      </div>
+    <!-- Hidden file input (always rendered) -->
+    <input
+      ref="fileInput"
+      type="file"
+      accept="image/*"
+      multiple
+      style="display: none"
+      @change="onFileSelect"
+    />
 
-      <!-- Thumbnail grid -->
-      <div class="file-thumb-grid">
-        <div v-for="(file, index) in selectedFiles" :key="index" class="file-thumb-cell">
-          <img :src="previewUrls[index]" :alt="file.name" />
-          <div class="file-thumb-overlay" v-if="!uploading">
-            <button class="thumb-remove-btn" @click.stop="removeFile(index)" title="Remove">
-              <i class="pi pi-times"></i>
-            </button>
+    <!-- File grid + actions — split sidebar layout -->
+    <div v-if="selectedFiles.length > 0" class="upload-layout">
+      <!-- ── Left panel: file thumbnail grid ── -->
+      <div class="upload-files-panel surface-card border-round-xl p-3">
+        <div class="flex align-items-center justify-content-between mb-3">
+          <span class="font-semibold text-sm flex align-items-center gap-2">
+            <i class="pi pi-images text-primary"></i>
+            {{ selectedFiles.length }} file{{ selectedFiles.length !== 1 ? 's' : '' }} selected
+          </span>
+          <Button
+            label="Clear"
+            icon="pi pi-trash"
+            text
+            severity="secondary"
+            size="small"
+            @click="clearFiles"
+            :disabled="uploading"
+          />
+        </div>
+
+        <!-- Thumbnail grid -->
+        <div class="file-thumb-grid">
+          <div v-for="(file, index) in selectedFiles" :key="index" class="file-thumb-cell">
+            <img :src="previewUrls[index]" :alt="file.name" />
+            <div class="file-thumb-overlay" v-if="!uploading">
+              <button class="thumb-remove-btn" @click.stop="removeFile(index)" title="Remove">
+                <i class="pi pi-times"></i>
+              </button>
+            </div>
+            <div class="file-thumb-label">{{ truncateName(file.name) }}</div>
           </div>
-          <div class="file-thumb-label">{{ truncateName(file.name) }}</div>
+        </div>
+
+        <!-- Add more files row -->
+        <div
+          class="upload-add-more mt-3 text-center border-round-lg py-2 px-3"
+          @click="!uploading && fileInput.click()"
+          :style="uploading ? 'opacity:0.5; pointer-events:none' : 'cursor:pointer'"
+        >
+          <i class="pi pi-plus text-xs mr-1 text-color-secondary"></i>
+          <span class="text-xs text-color-secondary">Add more files</span>
         </div>
       </div>
 
-      <!-- Upload progress -->
-      <div v-if="uploading" class="mt-4 p-3 border-round-xl surface-100">
-        <div class="flex align-items-center gap-2 mb-2">
-          <i class="pi pi-spin pi-spinner text-primary"></i>
-          <span class="text-sm font-medium flex-1">
-            <span v-if="uploadPhase === 'uploading'">Uploading files...</span>
-            <span v-else>
-              Gemini AI is extracting data ({{ selectedFiles.length }} image{{
-                selectedFiles.length !== 1 ? 's' : ''
-              }})...
+      <!-- ── Right panel: actions sidebar ── -->
+      <div class="upload-actions-panel flex flex-column gap-3">
+        <!-- Process CTA card -->
+        <div
+          v-if="!uploading && uploadResults.length === 0"
+          class="surface-card border-round-xl p-3"
+        >
+          <div class="font-semibold text-sm mb-1 flex align-items-center gap-2">
+            <i class="pi pi-sparkles text-primary"></i>
+            Ready to process
+          </div>
+          <p class="text-xs text-color-secondary my-2">
+            Gemini AI will extract business details from
+            <strong>{{ selectedFiles.length }}</strong>
+            screenshot{{ selectedFiles.length !== 1 ? 's' : '' }}.
+          </p>
+          <Button
+            :label="`Process ${selectedFiles.length} Screenshot${selectedFiles.length !== 1 ? 's' : ''}`"
+            icon="pi pi-sparkles"
+            class="w-full"
+            @click="uploadAll"
+          />
+        </div>
+
+        <!-- Upload progress card -->
+        <div v-if="uploading" class="surface-card border-round-xl p-3">
+          <div class="flex align-items-center gap-2 mb-2">
+            <i class="pi pi-spin pi-spinner text-primary"></i>
+            <span class="text-sm font-medium flex-1">
+              <span v-if="uploadPhase === 'uploading'">Uploading files...</span>
+              <span v-else>
+                Gemini AI extracting ({{ selectedFiles.length }} image{{
+                  selectedFiles.length !== 1 ? 's' : ''
+                }})...
+              </span>
             </span>
-          </span>
-          <span class="text-sm font-bold text-primary">{{ uploadProgress }}%</span>
+            <span class="text-sm font-bold text-primary">{{ uploadProgress }}%</span>
+          </div>
+          <ProgressBar :value="uploadProgress" />
+          <p class="text-xs text-color-secondary mt-2 mb-0">
+            <span v-if="uploadPhase === 'processing'">
+              5–15 seconds per image. Keep this page open.
+            </span>
+            <span v-else>Transferring files to server...</span>
+          </p>
         </div>
-        <ProgressBar :value="uploadProgress" />
-        <p class="text-xs text-color-secondary mt-2 mb-0">
-          <span v-if="uploadPhase === 'processing'">
-            This may take 5-15 seconds per image. Keep this page open.
-          </span>
-          <span v-else>Transferring files to server...</span>
-        </p>
-      </div>
 
-      <!-- CTA -->
-      <div v-if="!uploading" class="flex justify-content-end mt-4">
-        <Button
-          :label="`Process ${selectedFiles.length} Screenshot${selectedFiles.length !== 1 ? 's' : ''}`"
-          icon="pi pi-sparkles"
-          @click="uploadAll"
-        />
+        <!-- Tips (sidebar) -->
+        <div class="surface-card border-round-xl p-3">
+          <div class="font-semibold text-xs mb-2 flex align-items-center gap-1">
+            <i class="pi pi-lightbulb text-primary"></i>
+            Tips
+          </div>
+          <ul class="text-xs text-color-secondary m-0 pl-3 flex flex-column gap-1">
+            <li>Include the page name clearly at the top</li>
+            <li>Plain-text phone numbers work best</li>
+            <li>Include About / bio section if possible</li>
+            <li>Facebook &amp; TikTok business profiles supported</li>
+          </ul>
+        </div>
       </div>
     </div>
 
@@ -467,6 +513,33 @@ async function uploadAll() {
   .file-thumb-grid {
     grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
     gap: 0.5rem;
+  }
+}
+
+/* ── Upload sidebar layout ──────────────────────────── */
+.upload-layout {
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  gap: 1rem;
+  align-items: start;
+}
+.upload-actions-panel {
+  position: sticky;
+  top: 1rem;
+}
+.upload-add-more {
+  border: 1px dashed var(--surface-border);
+  transition: border-color 0.15s;
+}
+.upload-add-more:hover {
+  border-color: var(--p-primary-400);
+}
+@media (max-width: 640px) {
+  .upload-layout {
+    grid-template-columns: 1fr;
+  }
+  .upload-actions-panel {
+    position: static;
   }
 }
 </style>

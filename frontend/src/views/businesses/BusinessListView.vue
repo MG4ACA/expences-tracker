@@ -2,19 +2,23 @@
   <div class="flex flex-column gap-4">
     <!-- Toolbar -->
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
-      <div class="flex align-items-center gap-2">
-        <InputText v-model="search" placeholder="Search businesses…" class="w-15rem" />
+      <div class="flex align-items-center gap-2 min-w-0" style="flex: 1; min-width: 0">
+        <InputText
+          v-model="search"
+          placeholder="Search…"
+          style="flex: 1; min-width: 0; max-width: 12rem"
+        />
         <Dropdown
           v-model="filterStatus"
           :options="statusOptions"
           option-label="label"
           option-value="value"
-          placeholder="All Statuses"
+          placeholder="Status"
           showClear
-          class="w-10rem"
+          style="width: 8.5rem; flex-shrink: 0"
         />
       </div>
-      <Button label="Add Business" icon="pi pi-plus" @click="openDialog()" />
+      <Button label="Add Business" icon="pi pi-plus" @click="openDialog()" style="flex-shrink: 0" />
     </div>
 
     <!-- Business cards -->
@@ -31,50 +35,61 @@
       <div
         v-for="biz in filteredBusinesses"
         :key="biz.id"
-        class="surface-card p-3 border-round-xl shadow-1 flex align-items-start gap-3"
+        class="surface-card p-2 border-round-xl shadow-1 flex align-items-center gap-2"
       >
         <!-- Icon -->
         <div
-          class="flex align-items-center justify-content-center border-round-lg surface-100"
-          style="width: 40px; height: 40px; flex-shrink: 0"
+          class="flex align-items-center justify-content-center border-round-lg surface-100 flex-shrink-0"
+          style="width: 34px; height: 34px"
         >
-          <i class="pi pi-building text-primary"></i>
+          <i class="pi pi-building text-primary text-sm"></i>
         </div>
 
         <!-- Main content -->
         <div class="flex-1 min-w-0">
-          <div class="flex align-items-center gap-2 flex-wrap">
-            <RouterLink
-              :to="`/businesses/${biz.id}`"
-              class="font-semibold text-primary no-underline"
-            >
-              {{ biz.name }}
-            </RouterLink>
+          <RouterLink
+            :to="`/businesses/${biz.id}`"
+            class="font-semibold text-primary no-underline text-sm"
+          >
+            {{ biz.name }}
+          </RouterLink>
+          <!-- Status + Type + User on one line -->
+          <div class="flex align-items-center gap-1 flex-wrap mt-1">
             <Tag
               :value="biz.status"
               :severity="statusSeverity(biz.status)"
-              style="font-size: 0.7rem"
+              style="font-size: 0.62rem; padding: 1px 5px"
             />
-            <Tag v-if="biz.type" :value="biz.type" severity="secondary" style="font-size: 0.7rem" />
+            <Tag
+              v-if="biz.type"
+              :value="biz.type"
+              severity="secondary"
+              style="font-size: 0.62rem; padding: 1px 5px"
+            />
+            <span
+              v-if="biz.assigned_name"
+              class="text-xs text-gray-400"
+              style="white-space: nowrap"
+            >
+              <i class="pi pi-user" style="font-size: 0.6rem"></i>
+              {{ biz.assigned_name }}
+            </span>
           </div>
-          <div class="flex gap-3 flex-wrap mt-1">
-            <span v-if="biz.city" class="text-sm text-gray-500">
-              <i class="pi pi-map-marker mr-1"></i>
+          <!-- City + Phone -->
+          <div v-if="biz.city || biz.phone" class="flex gap-2 flex-wrap" style="margin-top: 2px">
+            <span v-if="biz.city" class="text-xs text-gray-400">
+              <i class="pi pi-map-marker" style="font-size: 0.6rem"></i>
               {{ biz.city }}
             </span>
-            <span v-if="biz.phone" class="text-sm text-gray-500">
-              <i class="pi pi-phone mr-1"></i>
+            <span v-if="biz.phone" class="text-xs text-gray-400">
+              <i class="pi pi-phone" style="font-size: 0.6rem"></i>
               {{ biz.phone }}
-            </span>
-            <span v-if="biz.assigned_name" class="text-sm text-gray-500">
-              <i class="pi pi-user mr-1"></i>
-              {{ biz.assigned_name }}
             </span>
           </div>
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-1">
+        <div class="flex gap-1 flex-shrink-0">
           <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(biz)" />
           <Button
             v-if="auth.isAdmin"

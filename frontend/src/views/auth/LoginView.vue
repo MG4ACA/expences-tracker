@@ -73,8 +73,8 @@ const loading = ref(false);
 const error = ref('');
 
 function fillSample() {
-  email.value = 'admin@lumicorelabs.com';
-  password.value = 'admin123';
+  email.value = 'demo@lumicore-labs.com';
+  password.value = 'demo@123';
 }
 
 async function handleLogin() {

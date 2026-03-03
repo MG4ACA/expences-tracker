@@ -28,23 +28,29 @@
     </div>
 
     <!-- Toolbar -->
-    <div class="flex align-items-center justify-content-between flex-wrap gap-2">
-      <div class="flex gap-2 align-items-center">
-        <InputText v-model="monthFilter" type="month" class="w-10rem" />
+    <div class="finance-toolbar flex align-items-center justify-content-between flex-wrap gap-2">
+      <div class="flex gap-1 align-items-center finance-filter-group">
+        <InputText
+          v-model="monthFilter"
+          type="month"
+          style="flex: 1; min-width: 0; max-width: 10rem"
+        />
         <Dropdown
           v-model="typeFilter"
           :options="typeOptions"
           option-label="label"
           option-value="value"
-          placeholder="All Types"
+          placeholder="Type"
           showClear
-          class="w-8rem"
+          style="width: 7rem; flex-shrink: 0"
         />
-        <RouterLink to="/finance/categories">
-          <Button label="Categories" icon="pi pi-list" text />
-        </RouterLink>
       </div>
-      <Button label="Add Record" icon="pi pi-plus" @click="openDialog()" />
+      <div class="flex gap-1 align-items-center flex-shrink-0">
+        <RouterLink to="/finance/categories">
+          <Button icon="pi pi-list" v-tooltip.top="'Categories'" text rounded size="small" />
+        </RouterLink>
+        <Button label="Add Record" icon="pi pi-plus" @click="openDialog()" size="small" />
+      </div>
     </div>
 
     <!-- Finance record cards -->
@@ -61,13 +67,13 @@
       <div
         v-for="rec in records"
         :key="rec.id"
-        class="surface-card p-3 border-round-xl shadow-1 flex align-items-start gap-3"
+        class="surface-card p-2 border-round-xl shadow-1 flex align-items-center gap-2"
       >
         <!-- Type icon -->
         <div
-          class="flex align-items-center justify-content-center border-round-lg"
+          class="flex align-items-center justify-content-center border-round-lg flex-shrink-0"
           :class="rec.type === 'income' ? 'bg-green-50' : 'bg-red-50'"
-          style="width: 40px; height: 40px; flex-shrink: 0"
+          style="width: 34px; height: 34px"
         >
           <i
             :class="
@@ -75,14 +81,16 @@
                 ? 'pi pi-arrow-down text-green-500'
                 : 'pi pi-arrow-up text-red-500'
             "
+            style="font-size: 0.8rem"
           ></i>
         </div>
 
         <!-- Content -->
         <div class="flex-1 min-w-0">
-          <div class="flex align-items-center gap-2 flex-wrap">
+          <!-- Amount + tags on one line -->
+          <div class="flex align-items-center gap-1 flex-wrap">
             <span
-              class="font-semibold"
+              class="font-semibold text-sm"
               :class="rec.type === 'income' ? 'text-green-600' : 'text-red-500'"
             >
               {{ fmt(rec.amount) }}
@@ -90,28 +98,38 @@
             <Tag
               :value="rec.type"
               :severity="rec.type === 'income' ? 'success' : 'danger'"
-              style="font-size: 0.7rem"
+              style="font-size: 0.6rem; padding: 1px 5px"
             />
             <Tag
               v-if="rec.category_name"
               :value="rec.category_name"
               severity="secondary"
-              style="font-size: 0.7rem"
+              style="font-size: 0.6rem; padding: 1px 5px"
             />
           </div>
-          <div class="flex gap-3 flex-wrap mt-1">
-            <span v-if="rec.description" class="text-sm text-gray-500 truncate">
+          <!-- Description + date -->
+          <div class="flex gap-2 align-items-center flex-wrap" style="margin-top: 2px">
+            <span
+              v-if="rec.description"
+              class="text-xs text-gray-500"
+              style="
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: 12rem;
+              "
+            >
               {{ rec.description }}
             </span>
             <span class="text-xs text-gray-400">
-              <i class="pi pi-calendar mr-1"></i>
+              <i class="pi pi-calendar" style="font-size: 0.6rem"></i>
               {{ formatDate(rec.date) }}
             </span>
           </div>
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-1">
+        <div class="flex gap-1 flex-shrink-0">
           <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(rec)" />
           <Button
             icon="pi pi-trash"
@@ -319,3 +337,22 @@ onMounted(async () => {
   await Promise.all([loadCategories(), load()]);
 });
 </script>
+
+<style scoped>
+.finance-toolbar {
+  flex-wrap: wrap;
+}
+.finance-filter-group {
+  flex: 1;
+  min-width: 0;
+}
+@media (max-width: 480px) {
+  .finance-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .finance-filter-group {
+    width: 100%;
+  }
+}
+</style>

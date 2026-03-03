@@ -23,7 +23,7 @@
       <div
         v-for="todo in filteredTodos"
         :key="todo.id"
-        class="surface-card p-3 border-round-xl shadow-1 flex align-items-start gap-3"
+        class="surface-card p-2 border-round-xl shadow-1 flex align-items-center gap-2"
         :class="{ 'opacity-60': todo.status === 'done' }"
       >
         <!-- Status toggle -->
@@ -31,13 +31,13 @@
           :model-value="todo.status === 'done'"
           :binary="true"
           @change="toggleDone(todo)"
-          class="mt-1"
+          class="flex-shrink-0"
         />
 
-        <div class="flex-1">
-          <div class="flex align-items-center gap-2 flex-wrap">
+        <div class="flex-1 min-w-0">
+          <div class="flex align-items-center gap-1 flex-wrap">
             <span
-              class="font-medium"
+              class="font-medium text-sm"
               :class="todo.status === 'done' ? 'line-through text-gray-400' : ''"
             >
               {{ todo.title }}
@@ -45,30 +45,41 @@
             <Tag
               :value="todo.priority"
               :severity="prioritySeverity(todo.priority)"
-              style="font-size: 0.7rem"
+              style="font-size: 0.6rem; padding: 1px 5px"
             />
             <Tag
               :value="todo.status.replace('_', ' ')"
               severity="secondary"
-              style="font-size: 0.7rem"
+              style="font-size: 0.6rem; padding: 1px 5px"
             />
           </div>
-          <div v-if="todo.description" class="text-sm text-gray-500 mt-1">
-            {{ todo.description }}
-          </div>
-          <div
-            v-if="todo.due_date"
-            class="text-xs mt-1"
-            :class="isOverdue(todo) ? 'text-red-500' : 'text-gray-400'"
-          >
-            <i class="pi pi-calendar mr-1"></i>
-            Due: {{ formatDate(todo.due_date) }}
-            <span v-if="isOverdue(todo)">· Overdue</span>
+          <div class="flex gap-2 align-items-center flex-wrap" style="margin-top: 2px">
+            <span
+              v-if="todo.description"
+              class="text-xs text-gray-500"
+              style="
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                max-width: 14rem;
+              "
+            >
+              {{ todo.description }}
+            </span>
+            <span
+              v-if="todo.due_date"
+              class="text-xs"
+              :class="isOverdue(todo) ? 'text-red-500' : 'text-gray-400'"
+            >
+              <i class="pi pi-calendar" style="font-size: 0.6rem"></i>
+              {{ formatDate(todo.due_date) }}
+              <span v-if="isOverdue(todo)">· Overdue</span>
+            </span>
           </div>
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-1">
+        <div class="flex gap-1 flex-shrink-0">
           <Button icon="pi pi-pencil" text rounded size="small" @click="openDialog(todo)" />
           <Button
             icon="pi pi-trash"

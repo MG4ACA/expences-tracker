@@ -2,52 +2,52 @@
   <div class="flex flex-column gap-4">
     <!-- Summary cards -->
     <div class="grid">
-      <div class="col-12 md:col-6 lg:col-3">
-        <div class="surface-card p-4 border-round-xl shadow-1">
-          <div class="flex align-items-center justify-content-between mb-3">
-            <span class="text-gray-500 text-sm font-medium">Total Businesses</span>
-            <span class="bg-blue-100 text-blue-600 border-round p-2">
-              <i class="pi pi-building"></i>
+      <div class="col-6 lg:col-3">
+        <div class="surface-card p-3 border-round-xl shadow-1">
+          <div class="flex align-items-center justify-content-between mb-2">
+            <span class="text-gray-500 text-xs font-medium">Total Businesses</span>
+            <span class="bg-blue-100 text-blue-600 border-round p-1">
+              <i class="pi pi-building text-sm"></i>
             </span>
           </div>
-          <div class="text-3xl font-bold">{{ stats.totalBusinesses }}</div>
-          <div class="text-sm text-green-500 mt-1">{{ stats.converted }} converted</div>
+          <div class="text-2xl font-bold">{{ stats.totalBusinesses }}</div>
+          <div class="text-xs text-green-500 mt-1">{{ stats.converted }} converted</div>
         </div>
       </div>
-      <div class="col-12 md:col-6 lg:col-3">
-        <div class="surface-card p-4 border-round-xl shadow-1">
-          <div class="flex align-items-center justify-content-between mb-3">
-            <span class="text-gray-500 text-sm font-medium">Open Tasks</span>
-            <span class="bg-orange-100 text-orange-600 border-round p-2">
-              <i class="pi pi-check-square"></i>
+      <div class="col-6 lg:col-3">
+        <div class="surface-card p-3 border-round-xl shadow-1">
+          <div class="flex align-items-center justify-content-between mb-2">
+            <span class="text-gray-500 text-xs font-medium">Open Tasks</span>
+            <span class="bg-orange-100 text-orange-600 border-round p-1">
+              <i class="pi pi-check-square text-sm"></i>
             </span>
           </div>
-          <div class="text-3xl font-bold">{{ stats.openTodos }}</div>
-          <div class="text-sm text-gray-400 mt-1">pending + in progress</div>
+          <div class="text-2xl font-bold">{{ stats.openTodos }}</div>
+          <div class="text-xs text-gray-400 mt-1">pending + in progress</div>
         </div>
       </div>
-      <div class="col-12 md:col-6 lg:col-3">
-        <div class="surface-card p-4 border-round-xl shadow-1">
-          <div class="flex align-items-center justify-content-between mb-3">
-            <span class="text-gray-500 text-sm font-medium">Monthly Income</span>
-            <span class="bg-green-100 text-green-600 border-round p-2">
-              <i class="pi pi-arrow-up"></i>
+      <div class="col-6 lg:col-3">
+        <div class="surface-card p-3 border-round-xl shadow-1">
+          <div class="flex align-items-center justify-content-between mb-2">
+            <span class="text-gray-500 text-xs font-medium">Monthly Income</span>
+            <span class="bg-green-100 text-green-600 border-round p-1">
+              <i class="pi pi-arrow-up text-sm"></i>
             </span>
           </div>
-          <div class="text-3xl font-bold text-green-600">{{ formatCurrency(summary.income) }}</div>
-          <div class="text-sm text-gray-400 mt-1">{{ currentMonth }}</div>
+          <div class="text-lg font-bold text-green-600">{{ formatCurrency(summary.income) }}</div>
+          <div class="text-xs text-gray-400 mt-1">{{ currentMonth }}</div>
         </div>
       </div>
-      <div class="col-12 md:col-6 lg:col-3">
-        <div class="surface-card p-4 border-round-xl shadow-1">
-          <div class="flex align-items-center justify-content-between mb-3">
-            <span class="text-gray-500 text-sm font-medium">Monthly Expense</span>
-            <span class="bg-red-100 text-red-600 border-round p-2">
-              <i class="pi pi-arrow-down"></i>
+      <div class="col-6 lg:col-3">
+        <div class="surface-card p-3 border-round-xl shadow-1">
+          <div class="flex align-items-center justify-content-between mb-2">
+            <span class="text-gray-500 text-xs font-medium">Monthly Expense</span>
+            <span class="bg-red-100 text-red-600 border-round p-1">
+              <i class="pi pi-arrow-down text-sm"></i>
             </span>
           </div>
-          <div class="text-3xl font-bold text-red-500">{{ formatCurrency(summary.expense) }}</div>
-          <div class="text-sm mt-1" :class="summary.net >= 0 ? 'text-green-500' : 'text-red-400'">
+          <div class="text-lg font-bold text-red-500">{{ formatCurrency(summary.expense) }}</div>
+          <div class="text-xs mt-1" :class="summary.net >= 0 ? 'text-green-500' : 'text-red-400'">
             Net: {{ formatCurrency(summary.net) }}
           </div>
         </div>

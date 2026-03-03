@@ -17,9 +17,9 @@ async function getAll(userId, isAdmin) {
      FROM businesses b
      LEFT JOIN users u ON b.assigned_to = u.id
      LEFT JOIN users a ON b.added_by = a.id
-     WHERE b.assigned_to = ? OR b.added_by = ?
+     WHERE b.assigned_to = ?
      ORDER BY b.created_at DESC`,
-    [userId, userId],
+    [userId],
   );
   return rows;
 }
@@ -109,4 +109,25 @@ async function addCall(businessId, calledBy, { call_date, outcome, notes, next_f
   return result.insertId;
 }
 
-module.exports = { getAll, getById, create, update, remove, getCallsForBusiness, addCall };
+async function bulkAssign(userId, businessIds) {
+  // Unassign all businesses currently assigned to this user
+  await db.query('UPDATE businesses SET assigned_to = NULL WHERE assigned_to = ?', [userId]);
+  // Assign the selected businesses to this user
+  if (businessIds && businessIds.length > 0) {
+    await db.query(
+      `UPDATE businesses SET assigned_to = ? WHERE id IN (${businessIds.map(() => '?').join(',')})`,
+      [userId, ...businessIds],
+    );
+  }
+}
+
+module.exports = {
+  getAll,
+  getById,
+  create,
+  update,
+  remove,
+  getCallsForBusiness,
+  addCall,
+  bulkAssign,
+};

@@ -4,6 +4,7 @@ import { createPinia } from 'pinia';
 import PrimeVue from 'primevue/config';
 import ConfirmationService from 'primevue/confirmationservice';
 import ToastService from 'primevue/toastservice';
+import Tooltip from 'primevue/tooltip';
 import { createApp } from 'vue';
 
 import 'primeflex/primeflex.css';
@@ -17,7 +18,7 @@ import router from './router';
 const LumicorePreset = definePreset(Aura, {
   semantic: {
     primary: {
-      50:  '{indigo.50}',
+      50: '{indigo.50}',
       100: '{indigo.100}',
       200: '{indigo.200}',
       300: '{indigo.300}',
@@ -46,5 +47,6 @@ app.use(PrimeVue, {
 });
 app.use(ToastService);
 app.use(ConfirmationService);
+app.directive('tooltip', Tooltip);
 
 app.mount('#app');

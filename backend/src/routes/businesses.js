@@ -14,6 +14,18 @@ router.get('/', async (req, res) => {
   }
 });
 
+// POST /api/businesses/assign/bulk  (admin only)
+router.post('/assign/bulk', requireAdmin, async (req, res) => {
+  const { userId, businessIds } = req.body;
+  if (!userId) return res.status(400).json({ message: 'userId is required' });
+  try {
+    await businessService.bulkAssign(userId, businessIds || []);
+    res.json({ message: 'Businesses assigned' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 // GET /api/businesses/:id
 router.get('/:id', async (req, res) => {
   try {
@@ -69,6 +81,15 @@ router.get('/:id/calls', async (req, res) => {
 // POST /api/businesses/:id/calls
 router.post('/:id/calls', async (req, res) => {
   try {
+    const business = await businessService.getById(req.params.id);
+    if (!business) return res.status(404).json({ message: 'Business not found' });
+
+    const isAdmin = req.user.role === 'admin';
+    const isAssigned = business.assigned_to === req.user.id;
+    if (!isAdmin && !isAssigned) {
+      return res.status(403).json({ message: 'You are not assigned to this business' });
+    }
+
     const id = await businessService.addCall(req.params.id, req.user.id, req.body);
     res.status(201).json({ id, message: 'Call logged' });
   } catch (err) {

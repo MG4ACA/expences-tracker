@@ -122,11 +122,15 @@ CREATE TABLE IF NOT EXISTS todos (
 );
 
 -- ─────────────────────────────────────────────
--- Default admin user  (password: admin123)
+-- Default admin user  (password: 13@mek13)
 -- Change password immediately after first login!
 -- ─────────────────────────────────────────────
 INSERT INTO users (name, email, password, role)
-VALUES ('Admin', 'admin@lumicorelabs.com', '$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lHHO', 'admin');
+VALUES ('MG4ACA', 'mg4.aca@gmail.com', '$2a$10$0qtGs46qDP6nRxsPFLTDfObSEPQEKFgWtbEp.gg9VQneOu2ZrxYFe', 'admin');
+
+-- Demo employee user (password: demo@123)
+INSERT INTO users (name, email, password, role)
+VALUES ('Demo User', 'demo@lumicore-labs.com', '$2a$10$zkE7sh1TRdOsWQ0Q7Tj.TedJWXLTm5pQuKg9klJg3N2fXmADIX2sG', 'employee');
 
 -- Default finance categories for the admin
 INSERT INTO finance_categories (user_id, name, type) VALUES

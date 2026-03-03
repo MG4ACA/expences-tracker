@@ -7,6 +7,10 @@ export const businessApi = {
   update: (id, data) => http.put(`/businesses/${id}`, data).then((r) => r.data),
   remove: (id) => http.delete(`/businesses/${id}`).then((r) => r.data),
 
+  // Assignment
+  bulkAssign: (userId, businessIds) =>
+    http.post('/businesses/assign/bulk', { userId, businessIds }).then((r) => r.data),
+
   // Cold calls
   getCalls: (id) => http.get(`/businesses/${id}/calls`).then((r) => r.data),
   addCall: (id, data) => http.post(`/businesses/${id}/calls`, data).then((r) => r.data),

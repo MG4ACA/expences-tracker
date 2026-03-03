@@ -32,56 +32,66 @@
       <div
         v-for="dep in filtered"
         :key="dep.id"
-        class="surface-card p-3 border-round-xl shadow-1 flex align-items-start gap-3"
+        class="surface-card p-2 border-round-xl shadow-1 flex align-items-center gap-2"
       >
         <!-- Status colour strip -->
         <div
-          class="flex align-items-center justify-content-center border-round-lg"
+          class="flex align-items-center justify-content-center border-round-lg flex-shrink-0"
           :class="statusBg(dep.status)"
-          style="width: 40px; height: 40px; flex-shrink: 0"
+          style="width: 34px; height: 34px"
         >
-          <i class="pi pi-bolt" :class="statusIcon(dep.status)"></i>
+          <i class="pi pi-bolt" style="font-size: 0.8rem" :class="statusIcon(dep.status)"></i>
         </div>
 
         <!-- Main info -->
         <div class="flex-1 min-w-0">
           <!-- Row 1: app name + badges -->
-          <div class="flex align-items-center gap-2 flex-wrap">
-            <span class="font-semibold text-primary">{{ dep.pm2_app_name }}</span>
+          <div class="flex align-items-center gap-1 flex-wrap">
+            <span class="font-semibold text-primary text-sm">{{ dep.pm2_app_name }}</span>
             <Tag
               :value="dep.status"
               :severity="statusSeverity(dep.status)"
-              style="font-size: 0.7rem"
+              style="font-size: 0.6rem; padding: 1px 5px"
             />
-            <Tag :value="`port ${dep.port}`" severity="secondary" style="font-size: 0.7rem" />
+            <Tag
+              :value="`port ${dep.port}`"
+              severity="secondary"
+              style="font-size: 0.6rem; padding: 1px 5px"
+            />
           </div>
 
-          <!-- Row 2: meta -->
-          <div class="flex gap-3 flex-wrap mt-1">
-            <span class="text-sm text-gray-500">
-              <i class="pi pi-building mr-1"></i>
+          <!-- Row 2: meta (compact, all on one line) -->
+          <div class="flex gap-2 flex-wrap" style="margin-top: 2px">
+            <span class="text-xs text-gray-500">
+              <i class="pi pi-building" style="font-size: 0.6rem"></i>
               {{ dep.business_name || '—' }}
             </span>
-            <span v-if="dep.vps_label" class="text-sm text-gray-500">
-              <i class="pi pi-server mr-1"></i>
+            <span v-if="dep.vps_label" class="text-xs text-gray-500">
+              <i class="pi pi-server" style="font-size: 0.6rem"></i>
               {{ dep.vps_label }}
             </span>
-            <span v-if="dep.vps_path" class="text-sm text-gray-500">
-              <i class="pi pi-folder mr-1"></i>
+            <span v-if="dep.vps_path" class="text-xs text-gray-400">
+              <i class="pi pi-folder" style="font-size: 0.6rem"></i>
               {{ dep.vps_path }}
             </span>
-            <span v-if="dep.last_seen_at" class="text-sm text-gray-400">
-              <i class="pi pi-clock mr-1"></i>
-              last seen {{ formatDate(dep.last_seen_at) }}
+            <span v-if="dep.last_seen_at" class="text-xs text-gray-400">
+              <i class="pi pi-clock" style="font-size: 0.6rem"></i>
+              {{ formatDate(dep.last_seen_at) }}
             </span>
           </div>
 
-          <!-- Row 3: notes -->
-          <p v-if="dep.notes" class="text-sm text-gray-400 m-0 mt-1">{{ dep.notes }}</p>
+          <!-- Notes -->
+          <p
+            v-if="dep.notes"
+            class="text-xs text-gray-400 m-0"
+            style="margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap"
+          >
+            {{ dep.notes }}
+          </p>
         </div>
 
         <!-- Actions -->
-        <div class="flex gap-1">
+        <div class="flex gap-1 flex-shrink-0">
           <Button icon="pi pi-pencil" text rounded size="small" @click="openDepDialog(dep)" />
           <Button
             icon="pi pi-trash"

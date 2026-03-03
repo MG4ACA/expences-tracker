@@ -53,7 +53,13 @@
     <div class="surface-card p-4 border-round-xl shadow-1">
       <div class="flex align-items-center justify-content-between mb-3">
         <h3 class="m-0 font-semibold">Cold Call Log</h3>
-        <Button label="Log Call" icon="pi pi-phone" size="small" @click="callDialog = true" />
+        <Button
+          v-if="canLogCall"
+          label="Log Call"
+          icon="pi pi-phone"
+          size="small"
+          @click="callDialog = true"
+        />
       </div>
 
       <div v-if="calls.length === 0" class="text-gray-400 text-sm py-3">No calls logged yet.</div>
@@ -138,6 +144,7 @@
 
 <script setup>
 import { useBusinesses } from '@/composables/useBusinesses';
+import { useAuthStore } from '@/stores/auth';
 import Button from 'primevue/button';
 import Calendar from 'primevue/calendar';
 import Dialog from 'primevue/dialog';
@@ -146,11 +153,16 @@ import Message from 'primevue/message';
 import ProgressSpinner from 'primevue/progressspinner';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
-import { onMounted, ref } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 
 const route = useRoute();
 const id = route.params.id;
+const auth = useAuthStore();
+
+const canLogCall = computed(
+  () => auth.isAdmin || (business.value && business.value.assigned_to === auth.user?.id),
+);
 
 const {
   current: business,
