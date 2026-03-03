@@ -46,6 +46,7 @@ CREATE TABLE IF NOT EXISTS screenshot_queue (
   id                   INT PRIMARY KEY AUTO_INCREMENT,
   uploaded_by          INT NOT NULL,
   image_filename       VARCHAR(255),
+  image_hash           VARCHAR(32),
   status               ENUM('processing', 'pending_review', 'approved', 'discarded', 'error') DEFAULT 'processing',
   extracted_name       VARCHAR(200),
   extracted_type       VARCHAR(100),

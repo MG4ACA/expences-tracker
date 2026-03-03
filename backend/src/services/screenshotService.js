@@ -1,7 +1,10 @@
 const { GoogleGenAI, createUserContent, createPartFromUri } = require('@google/genai');
+const crypto = require('crypto');
 const db = require('../config/db');
 const fs = require('fs');
 const path = require('path');
+
+const UPLOAD_DIR = path.join(__dirname, '../../uploads/screenshots');
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
@@ -92,12 +95,35 @@ async function extractFromImage(imagePath) {
 /**
  * Insert a new queue item in 'processing' state and then run Gemini on it.
  * Updates the row to 'pending_review' (or 'error') when done.
+ * Skips processing if an identical image hash already exists in the queue.
  */
 async function enqueueAndProcess(uploadedBy, imageFilename, imagePath) {
+  // ── Duplicate image detection ─────────────────────────────────────
+  const imageBuffer = fs.readFileSync(imagePath);
+  const imageHash = crypto.createHash('md5').update(imageBuffer).digest('hex');
+
+  const [existing] = await db.query(
+    `SELECT id, status, extracted_name FROM screenshot_queue
+     WHERE image_hash = ? AND status NOT IN ('discarded') LIMIT 1`,
+    [imageHash],
+  );
+  if (existing.length > 0) {
+    // Delete the newly saved duplicate file — it's wasted disk space
+    if (fs.existsSync(imagePath)) fs.unlinkSync(imagePath);
+    const dup = existing[0];
+    console.log(`[screenshot] Duplicate image detected — matches queue item #${dup.id}`);
+    return {
+      id: dup.id,
+      status: 'duplicate',
+      duplicate: true,
+      error: `Duplicate image — already in queue as "${dup.extracted_name || 'item #' + dup.id}" (${dup.status})`,
+    };
+  }
+
   // Insert as processing
   const [insertResult] = await db.query(
-    'INSERT INTO screenshot_queue (uploaded_by, image_filename, status) VALUES (?, ?, ?)',
-    [uploadedBy, imageFilename, 'processing'],
+    'INSERT INTO screenshot_queue (uploaded_by, image_filename, image_hash, status) VALUES (?, ?, ?, ?)',
+    [uploadedBy, imageFilename, imageHash, 'processing'],
   );
   const queueId = insertResult.insertId;
   console.log(`[screenshot] [#${queueId}] Processing started — file: ${imageFilename}`);
@@ -201,13 +227,37 @@ async function updateQueueItem(id, data) {
 }
 
 /**
- * Approve a queue item: create a business record and mark the item as approved.
+ * Approve a queue item: duplicate-check, create business, delete image, mark approved.
  */
 async function approveQueueItem(id, approvedBy) {
   const [rows] = await db.query('SELECT * FROM screenshot_queue WHERE id = ?', [id]);
   const item = rows[0];
   if (!item) throw new Error('Queue item not found');
   if (item.status !== 'pending_review') throw new Error('Item is not in pending_review state');
+
+  // ── Duplicate business check ──────────────────────────────────────
+  if (item.extracted_phone) {
+    const [phoneMatch] = await db.query(
+      'SELECT id, name FROM businesses WHERE phone = ? LIMIT 1',
+      [item.extracted_phone],
+    );
+    if (phoneMatch.length > 0) {
+      throw new Error(
+        `Duplicate: a business with phone "${item.extracted_phone}" already exists — "${phoneMatch[0].name}" (#${phoneMatch[0].id})`,
+      );
+    }
+  }
+  if (item.extracted_name) {
+    const [nameMatch] = await db.query(
+      'SELECT id, name FROM businesses WHERE name = ? LIMIT 1',
+      [item.extracted_name],
+    );
+    if (nameMatch.length > 0) {
+      throw new Error(
+        `Duplicate: a business named "${item.extracted_name}" already exists (#${nameMatch[0].id})`,
+      );
+    }
+  }
 
   const [insertResult] = await db.query(
     `INSERT INTO businesses
@@ -229,7 +279,138 @@ async function approveQueueItem(id, approvedBy) {
 
   await db.query(`UPDATE screenshot_queue SET status = 'approved' WHERE id = ?`, [id]);
 
+  // ── Delete image file from disk after approval ────────────────────
+  if (item.image_filename) {
+    const filePath = path.join(UPLOAD_DIR, item.image_filename);
+    if (fs.existsSync(filePath)) {
+      try { fs.unlinkSync(filePath); } catch (_) { /* ignore */ }
+    }
+  }
+
   return insertResult.insertId;
+}
+
+/**
+ * Approve all pending_review items for a user (or all if admin).
+ * Returns { approved: [{id, businessId, name}], skipped: [{id, reason}] }
+ */
+async function approveAllPending(userId, isAdmin) {
+  let rows;
+  if (isAdmin) {
+    [rows] = await db.query(
+      `SELECT id FROM screenshot_queue WHERE status = 'pending_review' ORDER BY created_at ASC`,
+    );
+  } else {
+    [rows] = await db.query(
+      `SELECT id FROM screenshot_queue WHERE status = 'pending_review' AND uploaded_by = ? ORDER BY created_at ASC`,
+      [userId],
+    );
+  }
+
+  const approved = [];
+  const skipped = [];
+  for (const row of rows) {
+    try {
+      const businessId = await approveQueueItem(row.id, userId);
+      approved.push({ id: row.id, businessId });
+    } catch (err) {
+      skipped.push({ id: row.id, reason: err.message });
+    }
+  }
+  console.log(`[screenshot] Approve-all: ${approved.length} approved, ${skipped.length} skipped`);
+  return { approved, skipped };
+}
+
+/**
+ * Retry Gemini extraction for an item that is in 'error' state.
+ */
+async function retryQueueItem(id) {
+  const [rows] = await db.query('SELECT * FROM screenshot_queue WHERE id = ?', [id]);
+  const item = rows[0];
+  if (!item) throw new Error('Queue item not found');
+  if (item.status !== 'error') throw new Error('Only items in error state can be retried');
+
+  const imagePath = path.join(UPLOAD_DIR, item.image_filename);
+  if (!fs.existsSync(imagePath)) {
+    throw new Error('Image file no longer exists on disk — please re-upload this screenshot');
+  }
+
+  await db.query(
+    `UPDATE screenshot_queue SET status = 'processing', error_message = NULL WHERE id = ?`,
+    [id],
+  );
+  console.log(`[screenshot] [#${id}] Retry extraction started`);
+
+  try {
+    const extracted = await extractFromImage(imagePath);
+    console.log(`[screenshot] [#${id}] Retry OK — name: "${extracted.name || 'unknown'}"`);
+    await db.query(
+      `UPDATE screenshot_queue SET
+        status = 'pending_review',
+        extracted_name = ?, extracted_type = ?, extracted_phone = ?,
+        extracted_address = ?, extracted_city = ?, extracted_website = ?,
+        extracted_social_url = ?, extracted_notes = ?, raw_response = ?
+       WHERE id = ?`,
+      [
+        extracted.name || null, extracted.type || null, extracted.phone || null,
+        extracted.address || null, extracted.city || null, extracted.website || null,
+        extracted.social_url || null, extracted.notes || null, JSON.stringify(extracted),
+        id,
+      ],
+    );
+    return { id, status: 'pending_review', extracted };
+  } catch (err) {
+    console.error(`[screenshot] [#${id}] Retry FAILED — ${err.message}`);
+    await db.query(
+      `UPDATE screenshot_queue SET status = 'error', error_message = ? WHERE id = ?`,
+      [err.message, id],
+    );
+    throw err;
+  }
+}
+
+/**
+ * Get approved/discarded items (history view).
+ */
+async function getHistory(userId, isAdmin) {
+  if (isAdmin) {
+    const [rows] = await db.query(
+      `SELECT q.*, u.name AS uploader_name
+       FROM screenshot_queue q
+       LEFT JOIN users u ON q.uploaded_by = u.id
+       WHERE q.status IN ('approved', 'discarded')
+       ORDER BY q.created_at DESC
+       LIMIT 200`,
+    );
+    return rows;
+  }
+  const [rows] = await db.query(
+    `SELECT q.*, u.name AS uploader_name
+     FROM screenshot_queue q
+     LEFT JOIN users u ON q.uploaded_by = u.id
+     WHERE q.uploaded_by = ? AND q.status IN ('approved', 'discarded')
+     ORDER BY q.created_at DESC
+     LIMIT 200`,
+    [userId],
+  );
+  return rows;
+}
+
+/**
+ * On server startup: mark any items stuck in 'processing' (>10 min old) as error.
+ * These are leftovers from a previous server crash mid-upload.
+ */
+async function cleanStuckProcessing() {
+  const [result] = await db.query(
+    `UPDATE screenshot_queue
+     SET status = 'error',
+         error_message = 'Processing timed out — the server was restarted during upload'
+     WHERE status = 'processing'
+       AND created_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)`,
+  );
+  if (result.affectedRows > 0) {
+    console.log(`[screenshot] Cleaned up ${result.affectedRows} stuck 'processing' item(s) on startup`);
+  }
 }
 
 /**
@@ -238,7 +419,7 @@ async function approveQueueItem(id, approvedBy) {
 async function discardQueueItem(id) {
   const [rows] = await db.query('SELECT image_filename FROM screenshot_queue WHERE id = ?', [id]);
   if (rows[0]?.image_filename) {
-    const filePath = path.join(__dirname, '../../uploads/screenshots', rows[0].image_filename);
+    const filePath = path.join(UPLOAD_DIR, rows[0].image_filename);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   }
   await db.query(`UPDATE screenshot_queue SET status = 'discarded' WHERE id = ?`, [id]);
@@ -249,5 +430,9 @@ module.exports = {
   getQueue,
   updateQueueItem,
   approveQueueItem,
+  approveAllPending,
+  retryQueueItem,
+  getHistory,
   discardQueueItem,
+  cleanStuckProcessing,
 };

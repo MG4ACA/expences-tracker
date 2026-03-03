@@ -22,12 +22,13 @@ async function up(db) {
     console.log('      skip: businesses.social_media_url already exists');
   }
 
-  // 2. Create screenshot_queue table
+  // 2. Create screenshot_queue table (includes image_hash for duplicate detection)
   await db.query(`
     CREATE TABLE IF NOT EXISTS screenshot_queue (
       id                   INT PRIMARY KEY AUTO_INCREMENT,
       uploaded_by          INT NOT NULL,
       image_filename       VARCHAR(255),
+      image_hash           VARCHAR(32),
       status               ENUM('processing','pending_review','approved','discarded','error')
                              DEFAULT 'processing',
       extracted_name       VARCHAR(200),

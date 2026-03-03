@@ -100,6 +100,22 @@ router.put('/queue/:id', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────
+// POST /api/screenshots/queue/approve-all
+// Approve every pending_review item in one request
+// ─────────────────────────────────────────────────────────────────────
+router.post('/queue/approve-all', async (req, res) => {
+  try {
+    const result = await screenshotService.approveAllPending(
+      req.user.id,
+      req.user.role === 'admin',
+    );
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────
 // POST /api/screenshots/queue/:id/approve
 // Save extracted data as a new business
 // ─────────────────────────────────────────────────────────────────────
@@ -120,6 +136,32 @@ router.delete('/queue/:id', async (req, res) => {
   try {
     await screenshotService.discardQueueItem(req.params.id);
     res.json({ message: 'Queue item discarded' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// POST /api/screenshots/queue/:id/retry
+// Re-run Gemini on a failed (error) queue item
+// ─────────────────────────────────────────────────────────────────────
+router.post('/queue/:id/retry', async (req, res) => {
+  try {
+    const result = await screenshotService.retryQueueItem(req.params.id);
+    res.json(result);
+  } catch (err) {
+    res.status(400).json({ message: err.message });
+  }
+});
+
+// ─────────────────────────────────────────────────────────────────────
+// GET /api/screenshots/history
+// Approved and discarded items (audit log)
+// ─────────────────────────────────────────────────────────────────────
+router.get('/history', async (req, res) => {
+  try {
+    const items = await screenshotService.getHistory(req.user.id, req.user.role === 'admin');
+    res.json(items);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

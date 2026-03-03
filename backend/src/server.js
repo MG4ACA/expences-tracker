@@ -25,6 +25,10 @@ app.use('/api/screenshots', require('./routes/screenshots'));
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Lumicore Tracker API running on port ${PORT}`);
+  // Clean up any queue items stuck in 'processing' from a previous server crash
+  try {
+    await require('./services/screenshotService').cleanStuckProcessing();
+  } catch (_) { /* non-fatal */ }
 });

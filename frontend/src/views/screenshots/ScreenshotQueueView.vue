@@ -8,15 +8,23 @@
           Review and edit AI-extracted data before saving to your business list.
         </div>
       </div>
-      <div class="flex gap-2">
+      <div class="flex gap-2 flex-wrap">
+        <Button
+          v-if="activeTab === 'pending' && pendingCount > 0"
+          :label="`Approve All (${pendingCount})`"
+          icon="pi pi-check-circle"
+          size="small"
+          @click="approveAll"
+          :loading="approvingAll"
+        />
         <Button
           label="Refresh"
           icon="pi pi-refresh"
           severity="secondary"
           outlined
           size="small"
-          @click="loadQueue"
-          :loading="loading"
+          @click="activeTab === 'pending' ? loadQueue() : loadHistory()"
+          :loading="loading || historyLoading"
         />
         <Button
           label="Upload More"
@@ -27,14 +35,33 @@
       </div>
     </div>
 
+    <!-- Tab switcher -->
+    <div class="flex gap-1">
+      <Button
+        label="Pending Review"
+        :badge="pendingCount > 0 ? String(pendingCount) : undefined"
+        :text="activeTab !== 'pending'"
+        :outlined="activeTab === 'pending'"
+        size="small"
+        @click="activeTab = 'pending'"
+      />
+      <Button
+        label="History"
+        :text="activeTab !== 'history'"
+        :outlined="activeTab === 'history'"
+        size="small"
+        @click="switchToHistory"
+      />
+    </div>
+
     <!-- Loading -->
-    <div v-if="loading" class="text-center py-8 text-color-secondary">
+    <div v-if="activeTab === 'pending' && loading" class="text-center py-8 text-color-secondary">
       <i class="pi pi-spin pi-spinner text-4xl mb-3 block"></i>
       Loading queue…
     </div>
 
     <!-- Empty state -->
-    <div v-else-if="queue.length === 0" class="surface-card border-round-xl p-6 text-center">
+    <div v-else-if="activeTab === 'pending' && queue.length === 0" class="surface-card border-round-xl p-6 text-center">
       <i class="pi pi-check-circle text-4xl text-green-500 mb-3 block"></i>
       <div class="font-semibold text-lg mb-1">Queue is empty</div>
       <div class="text-color-secondary text-sm mb-4">
@@ -48,7 +75,7 @@
     </div>
 
     <!-- Queue items -->
-    <div v-else class="flex flex-column gap-4">
+    <div v-else-if="activeTab === 'pending'" class="flex flex-column gap-4">
       <div
         v-for="item in queue"
         :key="item.id"
@@ -195,6 +222,16 @@
                 :loading="actionLoading[item.id] === 'discard'"
               />
               <Button
+                v-if="item.status === 'error'"
+                label="Retry"
+                icon="pi pi-refresh"
+                severity="warning"
+                outlined
+                size="small"
+                @click="retryItem(item)"
+                :loading="actionLoading[item.id] === 'retry'"
+              />
+              <Button
                 v-if="item.status === 'pending_review'"
                 label="Save &amp; Add to Businesses"
                 icon="pi pi-check"
@@ -208,6 +245,50 @@
         </div>
       </div>
     </div>
+
+    <!-- History tab -->
+    <template v-else-if="activeTab === 'history'">
+      <div v-if="historyLoading" class="text-center py-8 text-color-secondary">
+        <i class="pi pi-spin pi-spinner text-4xl mb-3 block"></i>
+        Loading history…
+      </div>
+      <div v-else-if="history.length === 0" class="surface-card border-round-xl p-6 text-center">
+        <i class="pi pi-clock text-4xl text-color-secondary mb-3 block"></i>
+        <div class="font-semibold text-lg mb-1">No history yet</div>
+        <div class="text-color-secondary text-sm">Approved and discarded items will appear here.</div>
+      </div>
+      <div v-else class="flex flex-column gap-2">
+        <div
+          v-for="item in history"
+          :key="item.id"
+          class="surface-card border-round-xl p-3 flex align-items-center gap-3"
+        >
+          <i
+            :class="item.status === 'approved'
+              ? 'pi pi-check-circle text-green-500 text-xl'
+              : 'pi pi-times-circle text-red-400 text-xl'"
+          ></i>
+          <div class="flex-1 min-w-0">
+            <div class="font-medium text-sm">{{ item.extracted_name || '(no name)' }}</div>
+            <div class="text-xs text-color-secondary mt-1 flex gap-3 flex-wrap">
+              <span v-if="item.extracted_phone"><i class="pi pi-phone mr-1"></i>{{ item.extracted_phone }}</span>
+              <span v-if="item.extracted_city"><i class="pi pi-map-marker mr-1"></i>{{ item.extracted_city }}</span>
+              <span v-if="item.extracted_type"><i class="pi pi-tag mr-1"></i>{{ item.extracted_type }}</span>
+            </div>
+          </div>
+          <div class="text-right flex-shrink-0">
+            <span
+              class="text-xs font-medium px-2 py-1 border-round"
+              :class="item.status === 'approved' ? 'bg-green-100 text-green-700' : 'surface-200 text-color-secondary'"
+            >
+              {{ item.status === 'approved' ? 'Approved' : 'Discarded' }}
+            </span>
+            <div class="text-xs text-color-secondary mt-1">{{ formatDate(item.created_at) }}</div>
+            <div v-if="item.uploader_name" class="text-xs text-color-secondary">by {{ item.uploader_name }}</div>
+          </div>
+        </div>
+      </div>
+    </template>
 
     <!-- Image full preview dialog -->
     <Dialog
@@ -238,7 +319,7 @@ import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Textarea from 'primevue/textarea';
 import { useToast } from 'primevue/usetoast';
-import { onMounted, reactive, ref } from 'vue';
+import { computed, onMounted, reactive, ref } from 'vue';
 
 const toast = useToast();
 
@@ -248,6 +329,15 @@ const edits = reactive({});
 const actionLoading = reactive({});
 const previewVisible = ref(false);
 const previewItem = ref(null);
+
+const activeTab = ref('pending');
+const historyLoading = ref(false);
+const history = ref([]);
+const approvingAll = ref(false);
+
+const pendingCount = computed(
+  () => queue.value.filter((i) => i.status === 'pending_review').length,
+);
 
 async function loadQueue() {
   loading.value = true;
@@ -324,6 +414,89 @@ async function discard(item) {
 function openPreview(item) {
   previewItem.value = item;
   previewVisible.value = true;
+}
+
+function switchToHistory() {
+  activeTab.value = 'history';
+  if (history.value.length === 0) loadHistory();
+}
+
+async function loadHistory() {
+  historyLoading.value = true;
+  try {
+    history.value = await screenshotApi.getHistory();
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Failed to load history', detail: err.message, life: 3000 });
+  } finally {
+    historyLoading.value = false;
+  }
+}
+
+async function approveAll() {
+  approvingAll.value = true;
+  try {
+    const result = await screenshotApi.approveAll();
+    const n = result.approved.length;
+    const s = result.skipped.length;
+    if (n > 0) {
+      toast.add({
+        severity: 'success',
+        summary: `${n} business${n !== 1 ? 'es' : ''} added!`,
+        detail: s > 0 ? `${s} skipped (duplicates or errors)` : undefined,
+        life: 4000,
+      });
+    } else {
+      toast.add({
+        severity: 'warn',
+        summary: 'All skipped',
+        detail: result.skipped[0]?.reason || 'No items could be approved',
+        life: 5000,
+      });
+    }
+    await loadQueue();
+  } catch (err) {
+    toast.add({ severity: 'error', summary: 'Approve all failed', detail: err.message, life: 4000 });
+  } finally {
+    approvingAll.value = false;
+  }
+}
+
+async function retryItem(item) {
+  actionLoading[item.id] = 'retry';
+  try {
+    const result = await screenshotApi.retryQueueItem(item.id);
+    const idx = queue.value.findIndex((q) => q.id === item.id);
+    if (idx !== -1) {
+      queue.value[idx] = { ...queue.value[idx], status: result.status, error_message: null };
+      if (result.extracted) {
+        edits[item.id] = {
+          extracted_name: result.extracted.name || '',
+          extracted_type: result.extracted.type || '',
+          extracted_phone: result.extracted.phone || '',
+          extracted_address: result.extracted.address || '',
+          extracted_city: result.extracted.city || '',
+          extracted_website: result.extracted.website || '',
+          extracted_social_url: result.extracted.social_url || '',
+          extracted_notes: result.extracted.notes || '',
+        };
+      }
+    }
+    toast.add({
+      severity: 'success',
+      summary: 'Extraction successful!',
+      detail: `"${result.extracted?.name || 'Business'}" ready for review`,
+      life: 3000,
+    });
+  } catch (err) {
+    toast.add({
+      severity: 'error',
+      summary: 'Retry failed',
+      detail: err.response?.data?.message || err.message,
+      life: 4000,
+    });
+  } finally {
+    delete actionLoading[item.id];
+  }
 }
 
 function statusBarClass(status) {

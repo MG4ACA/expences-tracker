@@ -7,8 +7,7 @@
     "dev": "nodemon src/server.js",
     "seed": "node seeders/runner.js",
     "seed:status": "node seeders/runner.js --status",
-    "seed:fresh": "node seeders/runner.js --fresh",
-    "db:setup": "node scripts/db-setup.js"
+    "seed:fresh": "node seeders/runner.js --fresh"
   },
   "dependencies": {
     "@google/genai": "^1.43.0",

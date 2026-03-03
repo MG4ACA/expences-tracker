@@ -143,12 +143,17 @@
             :class="
               result.status === 'pending_review'
                 ? 'pi pi-check text-green-500'
-                : 'pi pi-exclamation-triangle text-orange-400'
+                : result.status === 'duplicate'
+                  ? 'pi pi-copy text-blue-400'
+                  : 'pi pi-exclamation-triangle text-orange-400'
             "
           ></i>
           <span v-if="result.status === 'pending_review'">
             <b>{{ result.extracted?.name || 'Unknown' }}</b>
             — ready to review
+          </span>
+          <span v-else-if="result.status === 'duplicate'" class="text-blue-600">
+            Duplicate — {{ result.error }}
           </span>
           <span v-else class="text-color-secondary">Failed to extract: {{ result.error }}</span>
         </div>
@@ -304,13 +309,24 @@ async function uploadAll() {
 
     const successCount = uploadResults.value.filter((r) => r.status === 'pending_review').length;
     const errorCount = uploadResults.value.filter((r) => r.status === 'error').length;
+    const dupCount = uploadResults.value.filter((r) => r.status === 'duplicate').length;
 
     if (successCount > 0) {
+      const parts = [`${successCount} ready for review`];
+      if (dupCount > 0) parts.push(`${dupCount} duplicate${dupCount !== 1 ? 's' : ''} skipped`);
+      if (errorCount > 0) parts.push(`${errorCount} failed`);
       toast.add({
         severity: 'success',
         summary: 'Processing complete',
-        detail: `${successCount} screenshot(s) ready for review${errorCount > 0 ? `, ${errorCount} failed` : ''}`,
+        detail: parts.join(', '),
         life: 4000,
+      });
+    } else if (dupCount > 0 && errorCount === 0) {
+      toast.add({
+        severity: 'info',
+        summary: 'All duplicates',
+        detail: `${dupCount} image${dupCount !== 1 ? 's were' : ' was'} already in the queue — nothing new to process`,
+        life: 5000,
       });
     } else {
       // Show the actual error from the first failed result instead of a generic message
