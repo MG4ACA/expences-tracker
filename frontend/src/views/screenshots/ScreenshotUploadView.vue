@@ -77,11 +77,7 @@
 
       <!-- Thumbnail grid -->
       <div class="file-thumb-grid">
-        <div
-          v-for="(file, index) in selectedFiles"
-          :key="index"
-          class="file-thumb-cell"
-        >
+        <div v-for="(file, index) in selectedFiles" :key="index" class="file-thumb-cell">
           <img :src="previewUrls[index]" :alt="file.name" />
           <div class="file-thumb-overlay" v-if="!uploading">
             <button class="thumb-remove-btn" @click.stop="removeFile(index)" title="Remove">
@@ -99,8 +95,9 @@
           <span class="text-sm font-medium flex-1">
             <span v-if="uploadPhase === 'uploading'">Uploading files...</span>
             <span v-else>
-              Gemini AI is extracting data ({{ selectedFiles.length }}
-              image{{ selectedFiles.length !== 1 ? 's' : '' }})...
+              Gemini AI is extracting data ({{ selectedFiles.length }} image{{
+                selectedFiles.length !== 1 ? 's' : ''
+              }})...
             </span>
           </span>
           <span class="text-sm font-bold text-primary">{{ uploadProgress }}%</span>
@@ -157,7 +154,8 @@
             ></i>
           </span>
           <span v-if="result.status === 'pending_review'">
-            <b>{{ result.extracted?.name || 'Unknown' }}</b> ready to review
+            <b>{{ result.extracted?.name || 'Unknown' }}</b>
+            ready to review
           </span>
           <span v-else-if="result.status === 'duplicate'" class="text-blue-700">
             Duplicate {{ result.error }}
@@ -238,12 +236,22 @@ function addFiles(files) {
   const MAX = 20;
   const remaining = MAX - selectedFiles.value.length;
   if (remaining <= 0) {
-    toast.add({ severity: 'warn', summary: 'Limit reached', detail: 'Maximum 20 screenshots at once', life: 3000 });
+    toast.add({
+      severity: 'warn',
+      summary: 'Limit reached',
+      detail: 'Maximum 20 screenshots at once',
+      life: 3000,
+    });
     return;
   }
   const toAdd = imageFiles.slice(0, remaining);
   if (toAdd.length < imageFiles.length) {
-    toast.add({ severity: 'warn', summary: 'Some files skipped', detail: `Only ${toAdd.length} file(s) added`, life: 3500 });
+    toast.add({
+      severity: 'warn',
+      summary: 'Some files skipped',
+      detail: `Only ${toAdd.length} file(s) added`,
+      life: 3500,
+    });
   }
   for (const file of toAdd) {
     selectedFiles.value.push(file);
@@ -303,17 +311,37 @@ async function uploadAll() {
       const parts = [`${successCount} ready for review`];
       if (dupCount > 0) parts.push(`${dupCount} duplicate${dupCount !== 1 ? 's' : ''} skipped`);
       if (errorCount > 0) parts.push(`${errorCount} failed`);
-      toast.add({ severity: 'success', summary: 'Processing complete', detail: parts.join(', '), life: 4000 });
+      toast.add({
+        severity: 'success',
+        summary: 'Processing complete',
+        detail: parts.join(', '),
+        life: 4000,
+      });
     } else if (dupCount > 0 && errorCount === 0) {
-      toast.add({ severity: 'info', summary: 'All duplicates', detail: `${dupCount} image${dupCount !== 1 ? 's were' : ' was'} already in the queue`, life: 5000 });
+      toast.add({
+        severity: 'info',
+        summary: 'All duplicates',
+        detail: `${dupCount} image${dupCount !== 1 ? 's were' : ' was'} already in the queue`,
+        life: 5000,
+      });
     } else {
       const firstError = uploadResults.value.find((r) => r.status === 'error');
-      toast.add({ severity: 'error', summary: 'All screenshots failed', detail: firstError?.error || 'Extraction failed', life: 6000 });
+      toast.add({
+        severity: 'error',
+        summary: 'All screenshots failed',
+        detail: firstError?.error || 'Extraction failed',
+        life: 6000,
+      });
     }
   } catch (err) {
     clearInterval(progressTimer);
     uploadPhase.value = '';
-    toast.add({ severity: 'error', summary: 'Upload failed', detail: err.response?.data?.message || err.message, life: 5000 });
+    toast.add({
+      severity: 'error',
+      summary: 'Upload failed',
+      detail: err.response?.data?.message || err.message,
+      life: 5000,
+    });
   } finally {
     uploading.value = false;
   }
@@ -324,7 +352,10 @@ async function uploadAll() {
 .drop-zone {
   border: 2px dashed var(--p-content-border-color, var(--surface-border));
   background: var(--surface-card);
-  transition: border-color 0.2s, background 0.2s, transform 0.15s;
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    transform 0.15s;
 }
 .drop-zone:hover {
   border-color: var(--p-primary-400);
@@ -420,9 +451,18 @@ async function uploadAll() {
   font-size: 0.7rem;
   flex-shrink: 0;
 }
-.result-icon-circle.success { background: #dcfce7; color: #16a34a; }
-.result-icon-circle.info    { background: #dbeafe; color: #2563eb; }
-.result-icon-circle.warn    { background: #fff7ed; color: #ea580c; }
+.result-icon-circle.success {
+  background: #dcfce7;
+  color: #16a34a;
+}
+.result-icon-circle.info {
+  background: #dbeafe;
+  color: #2563eb;
+}
+.result-icon-circle.warn {
+  background: #fff7ed;
+  color: #ea580c;
+}
 @media (max-width: 480px) {
   .file-thumb-grid {
     grid-template-columns: repeat(auto-fill, minmax(88px, 1fr));
