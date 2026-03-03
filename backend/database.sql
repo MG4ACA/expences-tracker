@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS businesses (
   google_maps_url TEXT,
   website         VARCHAR(255),
   status          ENUM('new', 'contacted', 'interested', 'rejected', 'converted') DEFAULT 'new',
+  social_media_url VARCHAR(255),
   assigned_to     INT,
   added_by        INT,
   notes           TEXT,
@@ -38,6 +39,28 @@ CREATE TABLE IF NOT EXISTS businesses (
 );
 
 -- ─────────────────────────────────────────────
+-- ─────────────────────────────────────────────
+-- Screenshot Import Queue
+-- ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS screenshot_queue (
+  id                   INT PRIMARY KEY AUTO_INCREMENT,
+  uploaded_by          INT NOT NULL,
+  image_filename       VARCHAR(255),
+  status               ENUM('processing', 'pending_review', 'approved', 'discarded', 'error') DEFAULT 'processing',
+  extracted_name       VARCHAR(200),
+  extracted_type       VARCHAR(100),
+  extracted_phone      VARCHAR(50),
+  extracted_address    TEXT,
+  extracted_city       VARCHAR(100),
+  extracted_website    VARCHAR(255),
+  extracted_social_url VARCHAR(255),
+  extracted_notes      TEXT,
+  raw_response         JSON,
+  error_message        TEXT,
+  created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Cold Calls
 -- ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS cold_calls (

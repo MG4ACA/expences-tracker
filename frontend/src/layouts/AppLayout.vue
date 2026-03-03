@@ -13,6 +13,7 @@
         <ul class="list-none p-0 m-0">
           <NavItem to="/" icon="pi-home" label="Dashboard" />
           <NavItem to="/businesses" icon="pi-building" label="Businesses" />
+          <NavItem to="/screenshots/upload" icon="pi-camera" label="Import Screenshots" />
           <NavItem to="/finance" icon="pi-wallet" label="Finance" />
           <NavItem to="/todos" icon="pi-check-square" label="My Tasks" />
           <template v-if="auth.isAdmin">
@@ -91,6 +92,13 @@
         </button>
       </RouterLink>
 
+      <RouterLink to="/screenshots/upload" custom v-slot="{ isActive, navigate }">
+        <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
+          <i class="pi pi-camera"></i>
+          <span>Import</span>
+        </button>
+      </RouterLink>
+
       <RouterLink to="/finance" custom v-slot="{ isActive, navigate }">
         <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
           <i class="pi pi-wallet"></i>
@@ -144,6 +152,8 @@ const pageTitles = {
   Todos: 'My Tasks',
   Servers: 'Server Deployments',
   Users: 'User Management',
+  ScreenshotUpload: 'Import from Screenshots',
+  ScreenshotQueue: 'Screenshot Review Queue',
 };
 
 const pageTitle = computed(() => pageTitles[route.name] || 'Lumicore Tracker');

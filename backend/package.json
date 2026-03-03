@@ -11,11 +11,14 @@
     "db:setup": "node scripts/db-setup.js"
   },
   "dependencies": {
+    "@google/genai": "^1.43.0",
+    "@google/generative-ai": "^0.24.1",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.18.3",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^2.1.0",
     "mysql2": "^3.9.3"
   },
   "devDependencies": {

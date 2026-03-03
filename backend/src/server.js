@@ -1,11 +1,15 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
+
+// Serve uploaded screenshot images
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
@@ -15,6 +19,7 @@ app.use('/api/coldcalls', require('./routes/coldcalls'));
 app.use('/api/finance', require('./routes/finance'));
 app.use('/api/todos', require('./routes/todos'));
 app.use('/api/deployments', require('./routes/deployments'));
+app.use('/api/screenshots', require('./routes/screenshots'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

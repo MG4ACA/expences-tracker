@@ -34,11 +34,22 @@ async function getById(id) {
 }
 
 async function create(
-  { name, type, phone, address, city, google_maps_url, website, assigned_to, notes },
+  {
+    name,
+    type,
+    phone,
+    address,
+    city,
+    google_maps_url,
+    website,
+    social_media_url,
+    assigned_to,
+    notes,
+  },
   addedBy,
 ) {
   const [result] = await db.query(
-    'INSERT INTO businesses (name, type, phone, address, city, google_maps_url, website, assigned_to, added_by, notes) VALUES (?,?,?,?,?,?,?,?,?,?)',
+    'INSERT INTO businesses (name, type, phone, address, city, google_maps_url, website, social_media_url, assigned_to, added_by, notes) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
     [
       name,
       type,
@@ -47,6 +58,7 @@ async function create(
       city,
       google_maps_url,
       website,
+      social_media_url || null,
       assigned_to || addedBy,
       addedBy,
       notes,
@@ -64,6 +76,7 @@ async function update(id, data) {
     'city',
     'google_maps_url',
     'website',
+    'social_media_url',
     'status',
     'assigned_to',
     'notes',

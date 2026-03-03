@@ -55,6 +55,16 @@ const routes = [
         component: () => import('@/views/admin/UsersView.vue'),
         meta: { requiresAdmin: true },
       },
+      {
+        path: 'screenshots/upload',
+        name: 'ScreenshotUpload',
+        component: () => import('@/views/screenshots/ScreenshotUploadView.vue'),
+      },
+      {
+        path: 'screenshots/queue',
+        name: 'ScreenshotQueue',
+        component: () => import('@/views/screenshots/ScreenshotQueueView.vue'),
+      },
     ],
   },
   { path: '/:pathMatch(.*)*', redirect: '/' },
