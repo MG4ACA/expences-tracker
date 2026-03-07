@@ -18,7 +18,7 @@
           style="width: 8.5rem; flex-shrink: 0"
         />
       </div>
-      <Button label="Add Business" icon="pi pi-plus" @click="openDialog()" style="flex-shrink: 0" />
+      <Button icon="pi pi-plus" @click="openDialog()" style="flex-shrink: 0" />
     </div>
 
     <!-- Business cards -->

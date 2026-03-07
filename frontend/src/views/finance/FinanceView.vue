@@ -44,12 +44,10 @@
           showClear
           style="width: 7rem; flex-shrink: 0"
         />
-      </div>
-      <div class="flex gap-1 align-items-center flex-shrink-0">
         <RouterLink to="/finance/categories">
           <Button icon="pi pi-list" v-tooltip.top="'Categories'" text rounded size="small" />
         </RouterLink>
-        <Button label="Add Record" icon="pi pi-plus" @click="openDialog()" size="small" />
+        <Button icon="pi pi-plus" @click="openDialog()" size="small" />
       </div>
     </div>
 

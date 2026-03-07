@@ -10,14 +10,6 @@
       </div>
       <div class="flex gap-2 flex-wrap align-items-center">
         <Button
-          v-if="activeTab === 'pending' && pendingCount > 0"
-          :label="`Approve All (${pendingCount})`"
-          icon="pi pi-check-circle"
-          size="small"
-          @click="approveAll"
-          :loading="approvingAll"
-        />
-        <Button
           icon="pi pi-refresh"
           severity="secondary"
           outlined
@@ -26,6 +18,14 @@
           v-tooltip.left="'Refresh'"
           @click="activeTab === 'pending' ? loadQueue() : loadHistory()"
           :loading="loading || historyLoading"
+        />
+        <Button
+          v-if="activeTab === 'pending' && pendingCount > 0"
+          :label="`Approve All (${pendingCount})`"
+          icon="pi pi-check-circle"
+          size="small"
+          @click="approveAll"
+          :loading="approvingAll"
         />
         <Button
           label="Upload More"

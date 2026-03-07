@@ -4,7 +4,6 @@
     <div class="flex align-items-center justify-content-between flex-wrap gap-2">
       <div class="flex gap-2 flex-wrap">
         <span class="p-input-icon-left">
-          <i class="pi pi-search" />
           <InputText v-model="search" placeholder="Search business…" class="w-14rem" />
         </span>
         <Select
@@ -20,8 +19,8 @@
       <div class="text-sm text-gray-400">{{ filteredCalls.length }} record(s)</div>
     </div>
 
-    <!-- Table -->
-    <div class="surface-card border-round-xl shadow-1 overflow-hidden">
+    <!-- Desktop: Table View -->
+    <div class="surface-card border-round-xl shadow-1 overflow-hidden hidden md:block">
       <DataTable
         :value="filteredCalls"
         :loading="loading"
@@ -106,6 +105,74 @@
           </template>
         </Column>
       </DataTable>
+    </div>
+
+    <!-- Mobile: Card View -->
+    <div class="flex flex-column gap-2 md:hidden">
+      <div v-if="loading" class="text-center py-6 text-gray-400">
+        <i class="pi pi-spin pi-spinner text-4xl mb-3 block"></i>
+        Loading…
+      </div>
+      <div v-else-if="filteredCalls.length === 0" class="text-center py-6 text-gray-400">
+        <i class="pi pi-phone text-4xl mb-3 block"></i>
+        No call logs found.
+      </div>
+      <div
+        v-for="call in filteredCalls"
+        :key="call.id"
+        class="surface-card p-2 border-round-lg shadow-1"
+      >
+        <!-- Business Name + Outcome -->
+        <div class="flex align-items-center justify-content-between gap-1">
+          <RouterLink
+            :to="`/businesses/${call.business_id}`"
+            class="text-primary font-semibold no-underline text-sm flex-1 min-w-0 truncate"
+          >
+            <p>
+              {{ call.business_name }}
+            </p>
+          </RouterLink>
+          <Tag
+            :value="call.outcome?.replace('_', ' ')"
+            :severity="outcomeSeverity(call.outcome)"
+            style="font-size: 0.65rem; padding: 1px 4px; flex-shrink: 0"
+          />
+        </div>
+
+        <!-- Call Date, Follow-up and Logged By -->
+        <div class="flex align-items-center justify-content-between text-xs gap-1">
+          <div class="flex align-items-center gap-1 text-gray-500">
+            <i class="pi pi-calendar" style="font-size: 0.5rem"></i>
+            {{ formatDate(call.call_date) }}
+          </div>
+          <div
+            v-if="call.next_followup"
+            :class="isOverdue(call.next_followup) ? 'text-red-500' : 'text-orange-500'"
+            class="flex align-items-center gap-1"
+          >
+            <i class="pi pi-calendar-clock" style="font-size: 0.5rem"></i>
+            {{ formatDate(call.next_followup) }}
+          </div>
+          <div v-else class="text-gray-400 text-xs">—</div>
+          <div class="text-gray-500 text-xs" style="font-size: 0.7rem">
+            {{ call.caller_name || '—' }}
+          </div>
+          <Button
+            icon="pi pi-trash"
+            text
+            rounded
+            size="small"
+            severity="danger"
+            @click="confirmDelete(call)"
+            style="padding: 0; width: 24px; height: 24px"
+          />
+        </div>
+
+        <!-- Notes -->
+        <div v-if="call.notes" class="text-xs text-gray-600 mt-1 line-clamp-1">
+          {{ call.notes }}
+        </div>
+      </div>
     </div>
   </div>
 </template>
