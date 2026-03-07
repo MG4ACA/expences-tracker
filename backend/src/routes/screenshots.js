@@ -44,28 +44,10 @@ router.post('/upload', upload.array('screenshots', 20), async (req, res) => {
   console.log(`[screenshot] Upload received — ${fileCount} file(s) from user #${req.user.id}`);
 
   try {
-    // Process images sequentially to respect Gemini free-tier rate limits
-    const results = [];
-    for (let i = 0; i < req.files.length; i++) {
-      const file = req.files[i];
-      console.log(
-        `[screenshot] Processing file ${i + 1}/${fileCount}: ${file.filename} (${(file.size / 1024).toFixed(0)} KB)`,
-      );
-      const result = await screenshotService.enqueueAndProcess(
-        req.user.id,
-        file.filename,
-        file.path,
-      );
-      results.push(result);
-      // 6-second gap between calls — free tier allows 15 RPM (4s minimum, 6s gives headroom)
-      if (i < req.files.length - 1) {
-        console.log(`[screenshot] Waiting 6s before next file...`);
-        await new Promise((resolve) => setTimeout(resolve, 6000));
-      }
-    }
+    const results = await screenshotService.enqueueBatch(req.user.id, req.files);
     const okCount = results.filter((r) => r.status === 'pending_review').length;
     const errCount = results.filter((r) => r.status === 'error').length;
-    console.log(`[screenshot] Batch complete — ${okCount} ok, ${errCount} failed`);
+    console.log(`[screenshot] Upload complete — ${okCount} ok, ${errCount} failed`);
     res.status(201).json({ message: `${results.length} screenshot(s) processed`, results });
   } catch (err) {
     console.error(`[screenshot] Unexpected route error — ${err.message}`);

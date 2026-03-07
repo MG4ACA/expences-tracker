@@ -16,6 +16,7 @@
           <NavItem to="/screenshots/upload" icon="pi-camera" label="Import Screenshots" />
           <NavItem to="/finance" icon="pi-wallet" label="Finance" />
           <NavItem to="/todos" icon="pi-check-square" label="My Tasks" />
+          <NavItem to="/coldcalls" icon="pi-phone" label="Call Logs" />
           <template v-if="auth.isAdmin">
             <li class="nav-section-label">Admin</li>
             <NavItem to="/servers" icon="pi-server" label="Servers" />
@@ -113,6 +114,13 @@
         </button>
       </RouterLink>
 
+      <RouterLink to="/coldcalls" custom v-slot="{ isActive, navigate }">
+        <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
+          <i class="pi pi-phone"></i>
+          <span>Calls</span>
+        </button>
+      </RouterLink>
+
       <RouterLink v-if="auth.isAdmin" to="/servers" custom v-slot="{ isActive, navigate }">
         <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
           <i class="pi pi-server"></i>
@@ -154,6 +162,7 @@ const pageTitles = {
   Users: 'User Management',
   ScreenshotUpload: 'Import from Screenshots',
   ScreenshotQueue: 'Screenshot Review Queue',
+  ColdCalls: 'Cold Call Logs',
 };
 
 const pageTitle = computed(() => pageTitles[route.name] || 'Lumicore Tracker');

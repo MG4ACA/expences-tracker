@@ -44,6 +44,11 @@ const routes = [
         component: () => import('@/views/todos/TodoView.vue'),
       },
       {
+        path: 'coldcalls',
+        name: 'ColdCalls',
+        component: () => import('@/views/coldcalls/ColdCallsView.vue'),
+      },
+      {
         path: 'servers',
         name: 'Servers',
         component: () => import('@/views/servers/ServersView.vue'),

@@ -463,7 +463,7 @@ You should see the Lumicore Tracker login page.
 ## 🔄 Step 10: Deployment Script (For Updates)
 
 ```bash
-nano /var/www/lumicore_tracker/deploy.sh
+nano /var/www/lumicore_tracker/expences-tracker/deploy.sh
 ```
 
 ```bash
@@ -495,10 +495,10 @@ echo "✅ Deployment complete!"
 ```
 
 ```bash
-chmod +x /var/www/lumicore_tracker/deploy.sh
+chmod +x /var/www/lumicore_tracker/expences-tracker/deploy.sh
 
 # Run deployment
-/var/www/lumicore_tracker/deploy.sh
+/var/www/lumicore_tracker/expences-tracker/deploy.sh
 ```
 
 ---

@@ -34,6 +34,30 @@ const MIME_MAP = {
   '.gif': 'image/gif',
 };
 
+// How many images to send in each Gemini call (free tier: 10 RPM, so 5/call = 4 calls for 20 images)
+const BATCH_SIZE = 5;
+
+const BATCH_PROMPT = `You are analyzing social media screenshots (Facebook or TikTok) of business pages or profiles.
+You will receive multiple images. For EACH image, extract business information and return a JSON ARRAY with exactly one object per image, in the same order as the images:
+[
+  {
+    "name": "business or page name",
+    "type": "type of business (e.g. Restaurant, Salon, Retail, Clothing, etc.) — infer from content",
+    "phone": "phone number if visible, otherwise null",
+    "address": "street address if visible, otherwise null",
+    "city": "city or town name if visible, otherwise null",
+    "website": "website URL if visible, otherwise null",
+    "social_url": "the Facebook/TikTok page URL or username handle if visible, otherwise null",
+    "notes": "short summary of what this business does, services, or any useful detail (max 200 chars), otherwise null"
+  }
+]
+
+Rules:
+- Return EXACTLY one object per image in the array, preserving the same order as the images provided
+- If a field is not found in an image, return null for that field
+- For phone numbers, include the full number with country code if shown (e.g. +94 77 123 4567)
+- Return ONLY the raw JSON array — no markdown, no code blocks, no extra explanation`;
+
 /**
  * Send an image to Gemini and return extracted business fields as an object.
  * Uses the Files API for upload — more efficient than base64 inline data.
@@ -90,6 +114,203 @@ async function extractFromImage(imagePath) {
   } catch {
     throw new Error(`Gemini returned non-JSON response: ${cleaned.slice(0, 200)}`);
   }
+}
+
+/**
+ * Send multiple images to Gemini in ONE call and return an array of extracted objects.
+ * items: [{ imagePath, mimeType }]
+ */
+async function extractFromBatch(items) {
+  const uploadedFiles = [];
+  let rawText;
+  try {
+    // Upload all images in parallel via Files API
+    const uploads = await Promise.all(
+      items.map(({ imagePath, mimeType }) =>
+        ai.files.upload({ file: imagePath, config: { mimeType } }),
+      ),
+    );
+    uploadedFiles.push(...uploads);
+
+    // Prompt first, then one image part per uploaded file
+    const parts = [BATCH_PROMPT, ...uploads.map((f) => createPartFromUri(f.uri, f.mimeType))];
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [createUserContent(parts)],
+    });
+    rawText = response.text.trim();
+  } catch (err) {
+    if (err.message && err.message.includes('429')) {
+      const retryMatch = err.message.match(/retry in ([\d.]+)s/i);
+      const hint = retryMatch ? ` Try again in ${Math.ceil(retryMatch[1])} seconds.` : '';
+      throw new Error(`Gemini rate limit reached.${hint}`);
+    }
+    throw err;
+  } finally {
+    // Clean up all uploaded files in parallel
+    await Promise.allSettled(
+      uploadedFiles.filter((f) => f?.name).map((f) => ai.files.delete(f.name)),
+    );
+  }
+
+  const cleaned = rawText
+    .replace(/^```json?\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim();
+
+  let parsed;
+  try {
+    parsed = JSON.parse(cleaned);
+  } catch {
+    throw new Error(`Gemini returned non-JSON response: ${cleaned.slice(0, 200)}`);
+  }
+
+  // Gemini may return a plain object for a batch of 1 — normalise to array
+  return Array.isArray(parsed) ? parsed : [parsed];
+}
+
+/**
+ * Batch-enqueue and process a list of multer file objects.
+ * Phase 1: duplicate detection + DB inserts for all files (sequential, fast).
+ * Phase 2: Gemini extraction in groups of BATCH_SIZE — one API call per group,
+ *          6 s gap between groups to respect the free-tier 10 RPM limit.
+ * Returns results array in the same order as `files`.
+ */
+async function enqueueBatch(uploadedBy, files) {
+  // ── Phase 1: dedup + insert ────────────────────────────────────────
+  const allResults = [];
+  const toProcess = []; // { resultIndex, queueId, imagePath, mimeType }
+
+  for (const file of files) {
+    const imageBuffer = fs.readFileSync(file.path);
+    const imageHash = crypto.createHash('md5').update(imageBuffer).digest('hex');
+
+    const [existing] = await db.query(
+      `SELECT id, status, extracted_name FROM screenshot_queue
+       WHERE image_hash = ? AND status NOT IN ('discarded') LIMIT 1`,
+      [imageHash],
+    );
+    if (existing.length > 0) {
+      if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+      const dup = existing[0];
+      console.log(`[screenshot] Duplicate detected — matches queue item #${dup.id}`);
+      allResults.push({
+        id: dup.id,
+        status: 'duplicate',
+        duplicate: true,
+        error: `Duplicate image — already in queue as "${dup.extracted_name || 'item #' + dup.id}" (${dup.status})`,
+      });
+      continue;
+    }
+
+    const ext = path.extname(file.originalname || file.filename).toLowerCase();
+    const mimeType = MIME_MAP[ext] || 'image/jpeg';
+
+    const [insertResult] = await db.query(
+      'INSERT INTO screenshot_queue (uploaded_by, image_filename, image_hash, status) VALUES (?, ?, ?, ?)',
+      [uploadedBy, file.filename, imageHash, 'processing'],
+    );
+    const queueId = insertResult.insertId;
+    console.log(`[screenshot] [#${queueId}] Queued for batch processing — file: ${file.filename}`);
+
+    allResults.push({ id: queueId, status: 'processing' }); // placeholder
+    toProcess.push({ resultIndex: allResults.length - 1, queueId, imagePath: file.path, mimeType });
+  }
+
+  if (toProcess.length === 0) return allResults;
+
+  // ── Phase 2: Gemini in batches of BATCH_SIZE ───────────────────────
+  const totalBatches = Math.ceil(toProcess.length / BATCH_SIZE);
+  console.log(
+    `[screenshot] Processing ${toProcess.length} image(s) in ${totalBatches} batch(es) of up to ${BATCH_SIZE} — ~${totalBatches * 6}s total`,
+  );
+
+  for (let batchIdx = 0; batchIdx < totalBatches; batchIdx++) {
+    const batch = toProcess.slice(batchIdx * BATCH_SIZE, (batchIdx + 1) * BATCH_SIZE);
+    console.log(
+      `[screenshot] Batch ${batchIdx + 1}/${totalBatches} — sending ${batch.length} image(s) to Gemini`,
+    );
+
+    let extracted = [];
+    let batchError = null;
+    try {
+      extracted = await extractFromBatch(
+        batch.map(({ imagePath, mimeType }) => ({ imagePath, mimeType })),
+      );
+      // Pad with nulls if Gemini returned fewer results than images sent
+      if (extracted.length !== batch.length) {
+        console.warn(
+          `[screenshot] Batch ${batchIdx + 1}: Gemini returned ${extracted.length} result(s) for ${batch.length} image(s) — padding missing entries as errors`,
+        );
+        while (extracted.length < batch.length) extracted.push(null);
+      }
+    } catch (err) {
+      console.error(`[screenshot] Batch ${batchIdx + 1} FAILED — ${err.message}`);
+      batchError = err.message;
+    }
+
+    // Persist results for each item in this batch
+    for (let i = 0; i < batch.length; i++) {
+      const { queueId, resultIndex } = batch[i];
+      const data = batchError ? null : extracted[i];
+
+      if (!data) {
+        const errMsg = batchError || 'Gemini did not return a result for this image';
+        console.error(`[screenshot] [#${queueId}] Extraction FAILED — ${errMsg}`);
+        await db.query(
+          `UPDATE screenshot_queue SET status = 'error', error_message = ? WHERE id = ?`,
+          [errMsg, queueId],
+        );
+        allResults[resultIndex] = { id: queueId, status: 'error', error: errMsg };
+      } else {
+        console.log(
+          `[screenshot] [#${queueId}] OK — name: "${data.name || 'unknown'}", phone: ${data.phone || 'none'}`,
+        );
+        await db.query(
+          `UPDATE screenshot_queue SET
+            status               = 'pending_review',
+            extracted_name       = ?,
+            extracted_type       = ?,
+            extracted_phone      = ?,
+            extracted_address    = ?,
+            extracted_city       = ?,
+            extracted_website    = ?,
+            extracted_social_url = ?,
+            extracted_notes      = ?,
+            raw_response         = ?
+           WHERE id = ?`,
+          [
+            data.name || null,
+            data.type || null,
+            data.phone || null,
+            data.address || null,
+            data.city || null,
+            data.website || null,
+            data.social_url || null,
+            data.notes || null,
+            JSON.stringify(data),
+            queueId,
+          ],
+        );
+        allResults[resultIndex] = { id: queueId, status: 'pending_review', extracted: data };
+      }
+    }
+
+    // Wait 6 s between batches (skip delay after the last batch)
+    if (batchIdx < totalBatches - 1) {
+      console.log(`[screenshot] Waiting 6s before next batch...`);
+      await new Promise((resolve) => setTimeout(resolve, 6000));
+    }
+  }
+
+  const okCount = allResults.filter((r) => r.status === 'pending_review').length;
+  const errCount = allResults.filter((r) => r.status === 'error').length;
+  const dupCount = allResults.filter((r) => r.status === 'duplicate').length;
+  console.log(
+    `[screenshot] All batches complete — ${okCount} ok, ${errCount} failed, ${dupCount} duplicate`,
+  );
+  return allResults;
 }
 
 /**
@@ -237,10 +458,9 @@ async function approveQueueItem(id, approvedBy) {
 
   // ── Duplicate business check ──────────────────────────────────────
   if (item.extracted_phone) {
-    const [phoneMatch] = await db.query(
-      'SELECT id, name FROM businesses WHERE phone = ? LIMIT 1',
-      [item.extracted_phone],
-    );
+    const [phoneMatch] = await db.query('SELECT id, name FROM businesses WHERE phone = ? LIMIT 1', [
+      item.extracted_phone,
+    ]);
     if (phoneMatch.length > 0) {
       throw new Error(
         `Duplicate: a business with phone "${item.extracted_phone}" already exists — "${phoneMatch[0].name}" (#${phoneMatch[0].id})`,
@@ -248,10 +468,9 @@ async function approveQueueItem(id, approvedBy) {
     }
   }
   if (item.extracted_name) {
-    const [nameMatch] = await db.query(
-      'SELECT id, name FROM businesses WHERE name = ? LIMIT 1',
-      [item.extracted_name],
-    );
+    const [nameMatch] = await db.query('SELECT id, name FROM businesses WHERE name = ? LIMIT 1', [
+      item.extracted_name,
+    ]);
     if (nameMatch.length > 0) {
       throw new Error(
         `Duplicate: a business named "${item.extracted_name}" already exists (#${nameMatch[0].id})`,
@@ -283,7 +502,11 @@ async function approveQueueItem(id, approvedBy) {
   if (item.image_filename) {
     const filePath = path.join(UPLOAD_DIR, item.image_filename);
     if (fs.existsSync(filePath)) {
-      try { fs.unlinkSync(filePath); } catch (_) { /* ignore */ }
+      try {
+        fs.unlinkSync(filePath);
+      } catch (_) {
+        /* ignore */
+      }
     }
   }
 
@@ -352,19 +575,25 @@ async function retryQueueItem(id) {
         extracted_social_url = ?, extracted_notes = ?, raw_response = ?
        WHERE id = ?`,
       [
-        extracted.name || null, extracted.type || null, extracted.phone || null,
-        extracted.address || null, extracted.city || null, extracted.website || null,
-        extracted.social_url || null, extracted.notes || null, JSON.stringify(extracted),
+        extracted.name || null,
+        extracted.type || null,
+        extracted.phone || null,
+        extracted.address || null,
+        extracted.city || null,
+        extracted.website || null,
+        extracted.social_url || null,
+        extracted.notes || null,
+        JSON.stringify(extracted),
         id,
       ],
     );
     return { id, status: 'pending_review', extracted };
   } catch (err) {
     console.error(`[screenshot] [#${id}] Retry FAILED — ${err.message}`);
-    await db.query(
-      `UPDATE screenshot_queue SET status = 'error', error_message = ? WHERE id = ?`,
-      [err.message, id],
-    );
+    await db.query(`UPDATE screenshot_queue SET status = 'error', error_message = ? WHERE id = ?`, [
+      err.message,
+      id,
+    ]);
     throw err;
   }
 }
@@ -409,7 +638,9 @@ async function cleanStuckProcessing() {
        AND created_at < DATE_SUB(NOW(), INTERVAL 10 MINUTE)`,
   );
   if (result.affectedRows > 0) {
-    console.log(`[screenshot] Cleaned up ${result.affectedRows} stuck 'processing' item(s) on startup`);
+    console.log(
+      `[screenshot] Cleaned up ${result.affectedRows} stuck 'processing' item(s) on startup`,
+    );
   }
 }
 
@@ -426,6 +657,7 @@ async function discardQueueItem(id) {
 }
 
 module.exports = {
+  enqueueBatch,
   enqueueAndProcess,
   getQueue,
   updateQueueItem,
