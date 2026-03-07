@@ -44,6 +44,7 @@ async function up(db) {
       CREATE TABLE screenshot_queue (
         id                   INT PRIMARY KEY AUTO_INCREMENT,
         uploaded_by          INT NOT NULL,
+        business_id          INT,
         image_filename       VARCHAR(255),
         image_hash           VARCHAR(32),
         status               ENUM('processing','pending_review','approved','discarded','error')
@@ -59,14 +60,46 @@ async function up(db) {
         raw_response         JSON,
         error_message        TEXT,
         created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE
+        FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
       )
     `);
     console.log('      created: screenshot_queue (with image_hash)');
   } else {
     console.log('      skip:  screenshot_queue already exists — checking columns…');
 
-    // ── 3. screenshot_queue.image_hash ──────────────────────────────
+    // ── 3. screenshot_queue.business_id ─────────────────────────────
+    const [bizCols] = await db.query(`
+      SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+      WHERE TABLE_SCHEMA = DATABASE()
+        AND TABLE_NAME   = 'screenshot_queue'
+        AND COLUMN_NAME  = 'business_id'
+    `);
+    if (bizCols.length === 0) {
+      await db.query(`
+        ALTER TABLE screenshot_queue
+          ADD COLUMN business_id INT AFTER uploaded_by
+      `);
+      // Add the foreign key constraint
+      try {
+        await db.query(`
+          ALTER TABLE screenshot_queue
+            ADD CONSTRAINT fk_screenshot_business
+            FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+        `);
+        console.log('      added: screenshot_queue.business_id with CASCADE DELETE');
+      } catch (err) {
+        if (err.message && err.message.includes('already exists')) {
+          console.log('      skip:  FK constraint already exists');
+        } else {
+          throw err;
+        }
+      }
+    } else {
+      console.log('      skip:  screenshot_queue.business_id already exists');
+    }
+
+    // ── 4. screenshot_queue.image_hash ──────────────────────────────
     const [hashCols] = await db.query(`
       SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
       WHERE TABLE_SCHEMA = DATABASE()

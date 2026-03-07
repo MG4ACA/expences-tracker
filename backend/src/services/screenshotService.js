@@ -496,7 +496,11 @@ async function approveQueueItem(id, approvedBy) {
     ],
   );
 
-  await db.query(`UPDATE screenshot_queue SET status = 'approved' WHERE id = ?`, [id]);
+  const businessId = insertResult.insertId;
+  await db.query(`UPDATE screenshot_queue SET status = 'approved', business_id = ? WHERE id = ?`, [
+    businessId,
+    id,
+  ]);
 
   // ── Delete image file from disk after approval ────────────────────
   if (item.image_filename) {

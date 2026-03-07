@@ -27,6 +27,7 @@ async function up(db) {
     CREATE TABLE IF NOT EXISTS screenshot_queue (
       id                   INT PRIMARY KEY AUTO_INCREMENT,
       uploaded_by          INT NOT NULL,
+      business_id          INT,
       image_filename       VARCHAR(255),
       image_hash           VARCHAR(32),
       status               ENUM('processing','pending_review','approved','discarded','error')
@@ -42,7 +43,8 @@ async function up(db) {
       raw_response         JSON,
       error_message        TEXT,
       created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
     )
   `);
   console.log('      created: screenshot_queue');

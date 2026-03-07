@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS businesses (
 CREATE TABLE IF NOT EXISTS screenshot_queue (
   id                   INT PRIMARY KEY AUTO_INCREMENT,
   uploaded_by          INT NOT NULL,
+  business_id          INT,
   image_filename       VARCHAR(255),
   image_hash           VARCHAR(32),
   status               ENUM('processing', 'pending_review', 'approved', 'discarded', 'error') DEFAULT 'processing',
@@ -59,7 +60,8 @@ CREATE TABLE IF NOT EXISTS screenshot_queue (
   raw_response         JSON,
   error_message        TEXT,
   created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE
+  FOREIGN KEY (uploaded_by) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
 );
 
 -- Cold Calls
@@ -125,15 +127,15 @@ CREATE TABLE IF NOT EXISTS todos (
 -- Default admin user  (password: 13@mek13)
 -- Change password immediately after first login!
 -- ─────────────────────────────────────────────
-INSERT INTO users (name, email, password, role)
+INSERT IGNORE INTO users (name, email, password, role)
 VALUES ('MG4ACA', 'mg4.aca@gmail.com', '$2a$10$0qtGs46qDP6nRxsPFLTDfObSEPQEKFgWtbEp.gg9VQneOu2ZrxYFe', 'admin');
 
 -- Demo employee user (password: demo@123)
-INSERT INTO users (name, email, password, role)
+INSERT IGNORE INTO users (name, email, password, role)
 VALUES ('Demo User', 'demo@lumicore-labs.com', '$2a$10$zkE7sh1TRdOsWQ0Q7Tj.TedJWXLTm5pQuKg9klJg3N2fXmADIX2sG', 'employee');
 
 -- Default finance categories for the admin
-INSERT INTO finance_categories (user_id, name, type) VALUES
+INSERT IGNORE INTO finance_categories (user_id, name, type) VALUES
 (1, 'Projects', 'income'),
 (1, 'Freelancing', 'income'),
 (1, 'House Rent', 'income'),
