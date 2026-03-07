@@ -122,7 +122,7 @@
         <div class="grid">
           <div class="col-6">
             <label class="text-sm font-medium block mb-1">Priority</label>
-            <Dropdown
+            <Select
               v-model="form.priority"
               :options="priorityOptions"
               option-label="label"
@@ -132,7 +132,7 @@
           </div>
           <div class="col-6">
             <label class="text-sm font-medium block mb-1">Status</label>
-            <Dropdown
+            <Select
               v-model="form.status"
               :options="statusOptions.filter((o) => o.value)"
               option-label="label"
@@ -161,9 +161,9 @@ import Button from 'primevue/button';
 import Calendar from 'primevue/calendar';
 import Checkbox from 'primevue/checkbox';
 import Dialog from 'primevue/dialog';
-import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
+import Select from 'primevue/select';
 import SelectButton from 'primevue/selectbutton';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';

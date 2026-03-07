@@ -8,7 +8,7 @@
           placeholder="Search…"
           style="flex: 1; min-width: 0; max-width: 12rem"
         />
-        <Dropdown
+        <Select
           v-model="filterStatus"
           :options="statusOptions"
           option-label="label"
@@ -142,7 +142,7 @@
           </div>
           <div class="col-6">
             <label class="text-sm font-medium block mb-1">Status</label>
-            <Dropdown
+            <Select
               v-model="form.status"
               :options="statusOptions"
               option-label="label"
@@ -184,9 +184,9 @@ import { useBusinesses } from '@/composables/useBusinesses';
 import { useAuthStore } from '@/stores/auth';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
+import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';

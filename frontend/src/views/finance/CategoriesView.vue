@@ -88,7 +88,7 @@
         </div>
         <div>
           <label class="text-sm font-medium block mb-1">Type</label>
-          <Dropdown
+          <Select
             v-model="newType"
             :options="[
               { label: 'Income', value: 'income' },
@@ -113,9 +113,9 @@
 import { useFinance } from '@/composables/useFinance';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
+import Select from 'primevue/select';
 import { computed, onMounted, ref } from 'vue';
 
 const { categories, error, clearError, loadCategories, createCategory, removeCategory } =

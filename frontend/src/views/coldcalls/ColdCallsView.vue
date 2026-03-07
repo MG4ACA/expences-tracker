@@ -7,7 +7,7 @@
           <i class="pi pi-search" />
           <InputText v-model="search" placeholder="Search business…" class="w-14rem" />
         </span>
-        <Dropdown
+        <Select
           v-model="outcomeFilter"
           :options="outcomeOptions"
           option-label="label"
@@ -115,8 +115,8 @@ import { businessApi } from '@/api/businesses';
 import Button from 'primevue/button';
 import Column from 'primevue/column';
 import DataTable from 'primevue/datatable';
-import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
+import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';

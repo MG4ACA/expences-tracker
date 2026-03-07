@@ -6,7 +6,19 @@
         <div>
           <div class="flex align-items-center gap-2 mb-1">
             <Button icon="pi pi-arrow-left" text size="small" @click="$router.back()" />
-            <h2 class="m-0 text-2xl font-bold">{{ business.name }}</h2>
+            <h2 class="m-0 text-2xl font-bold flex align-items-center gap-2">
+              <span
+                style="cursor: pointer; user-select: none"
+                :title="nameCopied ? 'Copied!' : 'Click to copy name'"
+                @click="copyName"
+              >
+                {{ business.name }}
+              </span>
+              <i
+                :class="nameCopied ? 'pi pi-check text-green-500' : 'pi pi-copy text-gray-400'"
+                style="font-size: 0.9rem"
+              ></i>
+            </h2>
             <Tag :value="business.status" :severity="statusSeverity(business.status)" />
           </div>
           <div class="flex gap-3 text-sm text-gray-500 flex-wrap">
@@ -18,10 +30,6 @@
               <i class="pi pi-map-marker mr-1"></i>
               {{ business.city }}
             </span>
-            <span v-if="business.phone">
-              <i class="pi pi-phone mr-1"></i>
-              {{ business.phone }}
-            </span>
             <a
               v-if="business.google_maps_url"
               :href="business.google_maps_url"
@@ -32,9 +40,17 @@
               Google Maps
             </a>
           </div>
+          <a
+            v-if="business.phone"
+            :href="`tel:${business.phone}`"
+            class="text-base font-semibold text-gray-700 no-underline flex align-items-center gap-2 mt-2"
+          >
+            <i class="pi pi-phone"></i>
+            {{ business.phone }}
+          </a>
         </div>
         <div class="flex gap-2">
-          <Dropdown
+          <Select
             v-model="business.status"
             :options="statusOptions"
             option-label="label"
@@ -44,7 +60,7 @@
           />
         </div>
       </div>
-      <div v-if="business.notes" class="mt-3 text-sm text-gray-600 bg-gray-50 p-3 border-round">
+      <div v-if="business.notes" class="text-sm text-gray-600 bg-gray-50 p-3 border-round">
         {{ business.notes }}
       </div>
     </div>
@@ -107,7 +123,7 @@
         </div>
         <div>
           <label class="text-sm font-medium block mb-1">Outcome *</label>
-          <Dropdown
+          <Select
             v-model="callForm.outcome"
             :options="outcomeOptions"
             option-label="label"
@@ -148,9 +164,9 @@ import { useAuthStore } from '@/stores/auth';
 import Button from 'primevue/button';
 import Calendar from 'primevue/calendar';
 import Dialog from 'primevue/dialog';
-import Dropdown from 'primevue/dropdown';
 import Message from 'primevue/message';
 import ProgressSpinner from 'primevue/progressspinner';
+import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import Textarea from 'primevue/textarea';
 import { computed, onMounted, ref } from 'vue';
@@ -179,6 +195,29 @@ const {
 
 const callDialog = ref(false);
 const savingCall = ref(false);
+const nameCopied = ref(false);
+
+async function copyName() {
+  const text = business.value?.name;
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch {
+    // Fallback for browsers without Clipboard API
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.style.position = 'fixed';
+    el.style.opacity = '0';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  }
+  nameCopied.value = true;
+  setTimeout(() => {
+    nameCopied.value = false;
+  }, 2000);
+}
 const callForm = ref({ call_date: new Date(), outcome: '', notes: '', next_followup: null });
 
 const statusOptions = [

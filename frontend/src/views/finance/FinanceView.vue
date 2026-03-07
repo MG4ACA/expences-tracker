@@ -35,7 +35,7 @@
           type="month"
           style="flex: 1; min-width: 0; max-width: 10rem"
         />
-        <Dropdown
+        <Select
           v-model="typeFilter"
           :options="typeOptions"
           option-label="label"
@@ -164,7 +164,7 @@
         <div class="grid">
           <div class="col-6">
             <label class="text-sm font-medium block mb-1">Type *</label>
-            <Dropdown
+            <Select
               v-model="form.type"
               :options="typeOptions.filter((o) => o.value)"
               option-label="label"
@@ -179,7 +179,7 @@
           </div>
           <div class="col-12">
             <label class="text-sm font-medium block mb-1">Category</label>
-            <Dropdown
+            <Select
               v-model="form.category_id"
               :options="filteredCategories"
               option-label="name"
@@ -213,10 +213,10 @@ import { useFinance } from '@/composables/useFinance';
 import Button from 'primevue/button';
 import Calendar from 'primevue/calendar';
 import Dialog from 'primevue/dialog';
-import Dropdown from 'primevue/dropdown';
 import InputNumber from 'primevue/inputnumber';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
+import Select from 'primevue/select';
 import Tag from 'primevue/tag';
 import { computed, onMounted, ref, watch } from 'vue';
 

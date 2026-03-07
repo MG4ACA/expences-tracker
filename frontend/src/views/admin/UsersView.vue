@@ -116,7 +116,7 @@
         </div>
         <div>
           <label class="text-sm font-medium block mb-1">Role</label>
-          <Dropdown
+          <Select
             v-model="form.role"
             :options="[
               { label: 'Employee', value: 'employee' },
@@ -155,7 +155,7 @@
       <div class="flex flex-column gap-3 pt-2" style="height: 100%; overflow: hidden">
         <!-- Filter + counts -->
         <div class="flex align-items-center gap-2">
-          <Dropdown
+          <Select
             v-model="assignFilter"
             :options="assignStatusOptions"
             option-label="label"
@@ -256,7 +256,6 @@ import { useAuthStore } from '@/stores/auth';
 import Button from 'primevue/button';
 import Checkbox from 'primevue/checkbox';
 import Dialog from 'primevue/dialog';
-import Dropdown from 'primevue/dropdown';
 import InputText from 'primevue/inputtext';
 import Message from 'primevue/message';
 import Paginator from 'primevue/paginator';
