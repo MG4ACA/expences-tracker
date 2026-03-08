@@ -142,7 +142,7 @@
           </div>
           <div class="col-12">
             <label class="text-sm font-medium block mb-1">Due Date</label>
-            <Calendar v-model="form.due_date" class="w-full" date-format="yy-mm-dd" showClear />
+            <DatePicker v-model="form.due_date" class="w-full" showClear />
           </div>
         </div>
       </div>
@@ -157,16 +157,6 @@
 
 <script setup>
 import { useTodos } from '@/composables/useTodos';
-import Button from 'primevue/button';
-import Calendar from 'primevue/calendar';
-import Checkbox from 'primevue/checkbox';
-import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
-import Message from 'primevue/message';
-import Select from 'primevue/select';
-import SelectButton from 'primevue/selectbutton';
-import Tag from 'primevue/tag';
-import Textarea from 'primevue/textarea';
 import { computed, onMounted, ref } from 'vue';
 
 const { todos, loading, error, clearError, load, create, update, toggleDone, remove } = useTodos();
@@ -198,9 +188,24 @@ const emptyForm = () => ({
 });
 const form = ref(emptyForm());
 
-const filteredTodos = computed(() =>
-  statusFilter.value ? todos.value.filter((t) => t.status === statusFilter.value) : todos.value,
-);
+const statusSortPriority = {
+  pending: 0,
+  in_progress: 1,
+  done: 2,
+};
+
+const filteredTodos = computed(() => {
+  const filtered = statusFilter.value
+    ? todos.value.filter((t) => t.status === statusFilter.value)
+    : todos.value;
+
+  // Sort by status priority when viewing "All" tasks
+  if (!statusFilter.value) {
+    return filtered.sort((a, b) => statusSortPriority[a.status] - statusSortPriority[b.status]);
+  }
+
+  return filtered;
+});
 
 function prioritySeverity(p) {
   return { high: 'danger', medium: 'warning', low: 'info' }[p];
@@ -234,6 +239,10 @@ function fillSample() {
   };
 }
 
+function toLocalDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 async function save() {
   if (!form.value.title) return;
   saving.value = true;
@@ -242,7 +251,7 @@ async function save() {
       ...form.value,
       due_date:
         form.value.due_date instanceof Date
-          ? form.value.due_date.toISOString().slice(0, 10)
+          ? toLocalDateStr(form.value.due_date)
           : form.value.due_date,
     };
     if (editItem.value) {

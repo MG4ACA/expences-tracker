@@ -23,7 +23,15 @@ export function useTodos() {
 
   async function toggleDone(todo) {
     const newStatus = todo.status === 'done' ? 'pending' : 'done';
-    await call(() => todoApi.update(todo.id, { ...todo, status: newStatus }));
+    const d = todo.due_date ? new Date(todo.due_date) : null;
+    const updateData = {
+      ...todo,
+      status: newStatus,
+      due_date: d
+        ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        : null,
+    };
+    await call(() => todoApi.update(todo.id, updateData));
     await load();
   }
 

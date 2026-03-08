@@ -182,13 +182,6 @@
 <script setup>
 import { useBusinesses } from '@/composables/useBusinesses';
 import { useAuthStore } from '@/stores/auth';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
-import Message from 'primevue/message';
-import Select from 'primevue/select';
-import Tag from 'primevue/tag';
-import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { computed, onMounted, ref } from 'vue';
 

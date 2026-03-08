@@ -388,11 +388,6 @@
 
 <script setup>
 import { screenshotApi } from '@/api/screenshots';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import Drawer from 'primevue/drawer';
-import InputText from 'primevue/inputtext';
-import Textarea from 'primevue/textarea';
 import { useToast } from 'primevue/usetoast';
 import { computed, onMounted, reactive, ref } from 'vue';
 

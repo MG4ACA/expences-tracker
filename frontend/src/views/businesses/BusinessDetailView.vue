@@ -161,14 +161,6 @@
 <script setup>
 import { useBusinesses } from '@/composables/useBusinesses';
 import { useAuthStore } from '@/stores/auth';
-import Button from 'primevue/button';
-import Calendar from 'primevue/calendar';
-import Dialog from 'primevue/dialog';
-import Message from 'primevue/message';
-import ProgressSpinner from 'primevue/progressspinner';
-import Select from 'primevue/select';
-import Tag from 'primevue/tag';
-import Textarea from 'primevue/textarea';
 import { computed, onMounted, ref } from 'vue';
 import { useRoute } from 'vue-router';
 

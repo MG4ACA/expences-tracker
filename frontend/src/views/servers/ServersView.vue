@@ -273,14 +273,6 @@
 <script setup>
 import { businessApi } from '@/api/businesses';
 import { deploymentApi } from '@/api/deployments';
-import Button from 'primevue/button';
-import Dialog from 'primevue/dialog';
-import Divider from 'primevue/divider';
-import Dropdown from 'primevue/dropdown';
-import InputText from 'primevue/inputtext';
-import Message from 'primevue/message';
-import Tag from 'primevue/tag';
-import Textarea from 'primevue/textarea';
 import { useConfirm } from 'primevue/useconfirm';
 import { useToast } from 'primevue/usetoast';
 import { computed, onMounted, ref } from 'vue';

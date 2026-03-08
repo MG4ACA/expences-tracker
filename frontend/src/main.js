@@ -14,6 +14,32 @@ import './assets/main.css';
 import App from './App.vue';
 import router from './router';
 
+// PrimeVue components (global registration)
+import Avatar from 'primevue/avatar';
+import Button from 'primevue/button';
+import Calendar from 'primevue/calendar';
+import Checkbox from 'primevue/checkbox';
+import Column from 'primevue/column';
+import ConfirmDialog from 'primevue/confirmdialog';
+import DataTable from 'primevue/datatable';
+import DatePicker from 'primevue/datepicker';
+import Dialog from 'primevue/dialog';
+import Divider from 'primevue/divider';
+import Drawer from 'primevue/drawer';
+import Dropdown from 'primevue/dropdown';
+import InputNumber from 'primevue/inputnumber';
+import InputText from 'primevue/inputtext';
+import Message from 'primevue/message';
+import Paginator from 'primevue/paginator';
+import Password from 'primevue/password';
+import ProgressSpinner from 'primevue/progressspinner';
+import Select from 'primevue/select';
+import SelectButton from 'primevue/selectbutton';
+import Sidebar from 'primevue/sidebar';
+import Tag from 'primevue/tag';
+import Textarea from 'primevue/textarea';
+import Toast from 'primevue/toast';
+
 // Deep indigo/violet brand theme
 const LumicorePreset = definePreset(Aura, {
   semantic: {
@@ -48,5 +74,33 @@ app.use(PrimeVue, {
 app.use(ToastService);
 app.use(ConfirmationService);
 app.directive('tooltip', Tooltip);
+
+// register PrimeVue components globally
+[
+  Button,
+  Column,
+  DataTable,
+  InputText,
+  Select,
+  Tag,
+  Checkbox,
+  DatePicker,
+  Dialog,
+  SelectButton,
+  Textarea,
+  Calendar,
+  ProgressSpinner,
+  InputNumber,
+  Paginator,
+  Password,
+  Sidebar,
+  Drawer,
+  Avatar,
+  Divider,
+  Dropdown,
+  ConfirmDialog,
+  Toast,
+  Message,
+].forEach((comp) => app.component(comp.name, comp));
 
 app.mount('#app');

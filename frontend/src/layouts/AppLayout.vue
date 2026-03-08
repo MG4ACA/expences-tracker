@@ -140,8 +140,6 @@
 <script setup>
 import NavItem from '@/components/NavItem.vue';
 import { useAuthStore } from '@/stores/auth';
-import Avatar from 'primevue/avatar';
-import Button from 'primevue/button';
 import { computed } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
