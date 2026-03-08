@@ -4,8 +4,7 @@
     <aside class="layout-sidebar">
       <!-- Logo -->
       <div class="sidebar-logo">
-        <span class="text-white font-bold text-xl">⚡ Lumicore</span>
-        <div class="sidebar-logo-sub">Tracker</div>
+        <img src="@/assets/logo.png" alt="Lumicore Tracker" class="sidebar-logo-img" />
       </div>
 
       <!-- Nav -->
@@ -203,13 +202,15 @@ function handleLogout() {
 .sidebar-logo {
   padding: 1.25rem 1rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.sidebar-logo-sub {
-  font-size: 0.7rem;
-  color: rgba(255, 255, 255, 0.4);
-  margin-top: 2px;
-  letter-spacing: 0.05em;
+.sidebar-logo-img {
+  max-width: 100%;
+  height: auto;
+  max-height: 50px;
 }
 
 .sidebar-nav {
