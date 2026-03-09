@@ -120,11 +120,12 @@
           <label class="text-sm font-medium block mb-1">Title *</label>
           <InputText v-model="form.title" class="w-full" />
         </div>
-        <div>
-          <label class="text-sm font-medium block mb-1">Description</label>
-          <Textarea v-model="form.description" class="w-full" rows="2" />
-        </div>
+
         <div class="grid">
+          <div class="col-12">
+            <label class="text-sm font-medium block mb-1">Due Date</label>
+            <DatePicker v-model="form.due_date" class="w-full" showClear />
+          </div>
           <div class="col-6">
             <label class="text-sm font-medium block mb-1">Priority</label>
             <Select
@@ -145,10 +146,10 @@
               class="w-full"
             />
           </div>
-          <div class="col-12">
-            <label class="text-sm font-medium block mb-1">Due Date</label>
-            <DatePicker v-model="form.due_date" class="w-full" showClear />
-          </div>
+        </div>
+        <div>
+          <label class="text-sm font-medium block mb-1">Description</label>
+          <Textarea v-model="form.description" class="w-full" rows="2" />
         </div>
       </div>
       <Message v-if="error" severity="error" class="mx-3 mb-2">{{ error }}</Message>
