@@ -20,6 +20,7 @@ app.use('/api/finance', require('./routes/finance'));
 app.use('/api/todos', require('./routes/todos'));
 app.use('/api/deployments', require('./routes/deployments'));
 app.use('/api/screenshots', require('./routes/screenshots'));
+app.use('/api/progress', require('./routes/progress'));
 
 // Health check
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -30,5 +31,7 @@ app.listen(PORT, async () => {
   // Clean up any queue items stuck in 'processing' from a previous server crash
   try {
     await require('./services/screenshotService').cleanStuckProcessing();
-  } catch (_) { /* non-fatal */ }
+  } catch (_) {
+    /* non-fatal */
+  }
 });

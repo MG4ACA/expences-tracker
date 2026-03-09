@@ -16,6 +16,7 @@
           <NavItem to="/finance" icon="pi-wallet" label="Finance" />
           <NavItem to="/todos" icon="pi-check-square" label="My Tasks" />
           <NavItem to="/coldcalls" icon="pi-phone" label="Call Logs" />
+          <NavItem to="/progress" icon="pi-chart-bar" label="Daily Progress" />
           <template v-if="auth.isAdmin">
             <li class="nav-section-label">Admin</li>
             <NavItem to="/servers" icon="pi-server" label="Servers" />
@@ -92,13 +93,6 @@
         </button>
       </RouterLink>
 
-      <RouterLink to="/screenshots/upload" custom v-slot="{ isActive, navigate }">
-        <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
-          <i class="pi pi-camera"></i>
-          <span>Import</span>
-        </button>
-      </RouterLink>
-
       <RouterLink to="/finance" custom v-slot="{ isActive, navigate }">
         <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
           <i class="pi pi-wallet"></i>
@@ -120,26 +114,51 @@
         </button>
       </RouterLink>
 
-      <RouterLink v-if="auth.isAdmin" to="/servers" custom v-slot="{ isActive, navigate }">
-        <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
-          <i class="pi pi-server"></i>
-          <span>Servers</span>
-        </button>
-      </RouterLink>
-      <RouterLink v-if="auth.isAdmin" to="/admin/users" custom v-slot="{ isActive, navigate }">
-        <button class="bottom-nav-item" :class="{ active: isActive }" @click="navigate">
-          <i class="pi pi-users"></i>
-          <span>Users</span>
-        </button>
-      </RouterLink>
+      <!-- More button -->
+      <button
+        class="bottom-nav-item"
+        :class="{ active: moreActive || moreOpen }"
+        @click="moreOpen = !moreOpen"
+      >
+        <i class="pi" :class="moreOpen ? 'pi-times' : 'pi-ellipsis-h'"></i>
+        <span>More</span>
+      </button>
     </nav>
+
+    <!-- ── More Menu overlay ─────────────────────────────────────── -->
+    <Transition name="more-menu">
+      <div v-if="moreOpen" class="more-backdrop" @click.self="moreOpen = false">
+        <div class="more-menu">
+          <div class="more-menu-label">More</div>
+          <RouterLink to="/progress" class="more-menu-item" @click="moreOpen = false">
+            <i class="pi pi-chart-bar"></i>
+            <span>Daily Progress</span>
+          </RouterLink>
+          <RouterLink to="/screenshots/upload" class="more-menu-item" @click="moreOpen = false">
+            <i class="pi pi-camera"></i>
+            <span>Import Screenshots</span>
+          </RouterLink>
+          <template v-if="auth.isAdmin">
+            <div class="more-menu-divider"></div>
+            <RouterLink to="/servers" class="more-menu-item" @click="moreOpen = false">
+              <i class="pi pi-server"></i>
+              <span>Servers</span>
+            </RouterLink>
+            <RouterLink to="/admin/users" class="more-menu-item" @click="moreOpen = false">
+              <i class="pi pi-users"></i>
+              <span>Users</span>
+            </RouterLink>
+          </template>
+        </div>
+      </div>
+    </Transition>
   </div>
 </template>
 
 <script setup>
 import NavItem from '@/components/NavItem.vue';
 import { useAuthStore } from '@/stores/auth';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 
 const auth = useAuthStore();
@@ -147,6 +166,17 @@ const router = useRouter();
 const route = useRoute();
 
 const userInitial = computed(() => auth.user?.name?.charAt(0).toUpperCase() || 'U');
+
+const moreOpen = ref(false);
+const MORE_ROUTES = ['/progress', '/screenshots/upload', '/servers', '/admin/users'];
+const moreActive = computed(() => MORE_ROUTES.some((r) => route.path.startsWith(r)));
+// Close More menu on navigation
+watch(
+  () => route.path,
+  () => {
+    moreOpen.value = false;
+  },
+);
 
 const pageTitles = {
   Dashboard: 'Dashboard',
@@ -160,6 +190,7 @@ const pageTitles = {
   ScreenshotUpload: 'Import from Screenshots',
   ScreenshotQueue: 'Screenshot Review Queue',
   ColdCalls: 'Cold Call Logs',
+  DailyProgress: 'Daily Progress',
 };
 
 const pageTitle = computed(() => pageTitles[route.name] || 'Lumicore Tracker');
@@ -395,6 +426,87 @@ function handleLogout() {
 
   .bottom-nav-item.active i {
     transform: scale(1.1);
+  }
+}
+
+/* ── More menu overlay (all breakpoints but only visible on mobile) ── */
+.more-backdrop {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .more-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 200;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .more-menu {
+    width: 100%;
+    background: #fff;
+    border-radius: 1rem 1rem 0 0;
+    padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -4px 24px rgba(26, 23, 64, 0.15);
+  }
+
+  .more-menu-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #94a3b8;
+    padding: 0 1.25rem 0.5rem;
+  }
+
+  .more-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    padding: 0.875rem 1.25rem;
+    color: #1a1740;
+    text-decoration: none;
+    font-size: 0.95rem;
+    font-weight: 500;
+    transition: background 0.1s;
+  }
+
+  .more-menu-item:active {
+    background: #f4f5fb;
+  }
+
+  .more-menu-item i {
+    font-size: 1.1rem;
+    color: var(--p-primary-500);
+    width: 1.5rem;
+    text-align: center;
+  }
+
+  .more-menu-divider {
+    height: 1px;
+    background: #e8eaf2;
+    margin: 0.25rem 1.25rem;
+  }
+
+  /* Slide-up transition */
+  .more-menu-enter-active,
+  .more-menu-leave-active {
+    transition: opacity 0.2s ease;
+  }
+  .more-menu-enter-active .more-menu,
+  .more-menu-leave-active .more-menu {
+    transition: transform 0.25s ease;
+  }
+  .more-menu-enter-from,
+  .more-menu-leave-to {
+    opacity: 0;
+  }
+  .more-menu-enter-from .more-menu,
+  .more-menu-leave-to .more-menu {
+    transform: translateY(100%);
   }
 }
 </style>

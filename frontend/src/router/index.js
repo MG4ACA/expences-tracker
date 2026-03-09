@@ -49,6 +49,11 @@ const routes = [
         component: () => import('@/views/coldcalls/ColdCallsView.vue'),
       },
       {
+        path: 'progress',
+        name: 'DailyProgress',
+        component: () => import('@/views/progress/DailyProgressView.vue'),
+      },
+      {
         path: 'servers',
         name: 'Servers',
         component: () => import('@/views/servers/ServersView.vue'),
