@@ -1,5 +1,7 @@
 /* ── Global reset & base ──────────────────────────────────────────── */
-*, *::before, *::after {
+*,
+*::before,
+*::after {
   box-sizing: border-box;
 }
 
@@ -17,7 +19,9 @@ body {
 }
 
 /* ── Touch targets ────────────────────────────────────────────────── */
-button, a, [role="button"] {
+button,
+a,
+[role='button'] {
   min-height: 44px; /* iOS HIG minimum touch target */
   touch-action: manipulation;
 }
@@ -84,6 +88,14 @@ button, a, [role="button"] {
 
 /* ── Mobile helpers ───────────────────────────────────────────────── */
 @media (max-width: 768px) {
+  /* Toast: prevent overflow on small screens */
+  .p-toast {
+    left: 0.75rem !important;
+    right: 0.75rem !important;
+    width: auto !important;
+    max-width: calc(100vw - 1.5rem) !important;
+  }
+
   .p-dialog {
     margin: 0.75rem !important;
     max-height: calc(100dvh - 80px) !important;

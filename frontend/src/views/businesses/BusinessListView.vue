@@ -112,17 +112,7 @@
       class="w-full"
       style="max-width: 560px"
     >
-      <div class="flex flex-column gap-3 pt-2">
-        <div class="flex justify-content-end">
-          <Button
-            label="Fill Sample Data"
-            icon="pi pi-bolt"
-            size="small"
-            text
-            severity="secondary"
-            @click="fillSample"
-          />
-        </div>
+      <div class="flex flex-column gap-3">
         <div class="grid">
           <div class="col-12">
             <label class="text-sm font-medium block mb-1">Business Name *</label>
@@ -245,20 +235,6 @@ function openDialog(item = null) {
   form.value = item ? { ...item } : emptyForm();
   clearError();
   dialogVisible.value = true;
-}
-
-function fillSample() {
-  form.value = {
-    name: 'Colombo Hair Studio',
-    type: 'Saloon',
-    phone: '0771234567',
-    address: '45 Galle Road, Colombo 03',
-    city: 'Colombo',
-    google_maps_url: 'https://maps.google.com/?q=Colombo+Hair+Studio',
-    website: '',
-    status: 'new',
-    notes: 'No website found. Owner expressed interest when visited in person.',
-  };
 }
 
 async function save() {

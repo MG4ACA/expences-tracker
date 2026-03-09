@@ -71,17 +71,7 @@
 
     <!-- Add Dialog -->
     <Dialog v-model:visible="dialogVisible" header="Add Category" modal style="width: 340px">
-      <div class="flex flex-column gap-3 pt-2">
-        <div class="flex justify-content-end">
-          <Button
-            label="Fill Sample Data"
-            icon="pi pi-bolt"
-            size="small"
-            text
-            severity="secondary"
-            @click="fillSample"
-          />
-        </div>
+      <div class="flex flex-column gap-3">
         <div>
           <label class="text-sm font-medium block mb-1">Category Name *</label>
           <InputText v-model="newName" class="w-full" placeholder="e.g. Freelancing" />
@@ -134,14 +124,6 @@ function openDialog(type) {
   newName.value = '';
   clearError();
   dialogVisible.value = true;
-}
-
-function fillSample() {
-  const samples = {
-    income: 'Freelancing',
-    expense: 'Utilities',
-  };
-  newName.value = samples[newType.value] || 'Miscellaneous';
 }
 
 async function addCategory() {

@@ -83,17 +83,7 @@
       modal
       style="width: 400px"
     >
-      <div class="flex flex-column gap-3 pt-2">
-        <div class="flex justify-content-end">
-          <Button
-            label="Fill Sample Data"
-            icon="pi pi-bolt"
-            size="small"
-            text
-            severity="secondary"
-            @click="fillSample"
-          />
-        </div>
+      <div class="flex flex-column gap-3">
         <div>
           <label class="text-sm font-medium block mb-1">Name *</label>
           <InputText v-model="form.name" class="w-full" />
@@ -360,15 +350,6 @@ function openDialog(item = null) {
     : emptyForm();
   clearError();
   dialogVisible.value = true;
-}
-
-function fillSample() {
-  form.value = {
-    name: 'Demo User',
-    email: 'demo@lumicore-labs.com',
-    password: 'demo@123',
-    role: 'employee',
-  };
 }
 
 async function save() {

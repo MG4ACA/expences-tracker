@@ -148,17 +148,7 @@
       modal
       style="width: 420px"
     >
-      <div class="flex flex-column gap-3 pt-2">
-        <div class="flex justify-content-end">
-          <Button
-            label="Fill Sample Data"
-            icon="pi pi-bolt"
-            size="small"
-            text
-            severity="secondary"
-            @click="fillSample"
-          />
-        </div>
+      <div class="flex flex-column gap-3">
         <div class="grid">
           <div class="col-6">
             <label class="text-sm font-medium block mb-1">Type *</label>
@@ -272,25 +262,6 @@ function openDialog(item = null) {
   form.value = item ? { ...item, date: new Date(item.date) } : emptyForm();
   clearError();
   dialogVisible.value = true;
-}
-
-function fillSample() {
-  const incomecat = categories.value.find((c) => c.type === 'income');
-  const expensecat = categories.value.find((c) => c.type === 'expense');
-  form.value = {
-    type: 'income',
-    category_id: incomecat?.id ?? null,
-    amount: 75000,
-    description: 'Project payment — Lumicore Labs website build',
-    date: new Date(),
-  };
-  // If no income category exists, try expense as fallback
-  if (!incomecat && expensecat) {
-    form.value.type = 'expense';
-    form.value.category_id = expensecat.id;
-    form.value.amount = 3500;
-    form.value.description = 'Office supplies';
-  }
 }
 
 async function save() {

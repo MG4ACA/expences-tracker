@@ -15,6 +15,13 @@
           show-clear
           class="w-12rem"
         />
+        <Select
+          v-model="dateFilter"
+          :options="dateRangeOptions"
+          option-label="label"
+          option-value="value"
+          class="w-10rem"
+        />
       </div>
       <div class="text-sm text-gray-400">{{ filteredCalls.length }} record(s)</div>
     </div>
@@ -190,6 +197,7 @@ const allCalls = ref([]);
 const loading = ref(false);
 const search = ref('');
 const outcomeFilter = ref(null);
+const dateFilter = ref('today');
 
 const outcomeOptions = [
   { label: 'No Answer', value: 'no_answer' },
@@ -199,12 +207,47 @@ const outcomeOptions = [
   { label: 'Converted', value: 'converted' },
 ];
 
+const dateRangeOptions = [
+  { label: 'Today & Overdue', value: 'today' },
+  { label: 'This Week', value: 'week' },
+  { label: 'This Month', value: 'month' },
+  { label: 'All Dates', value: 'all' },
+];
+
+function matchesDateFilter(call, range) {
+  if (range === 'all') return true;
+
+  const dateVal = call.next_followup;
+  if (!dateVal) return false;
+
+  const today = new Date(new Date().toDateString());
+  const date = new Date(new Date(dateVal).toDateString());
+
+  if (range === 'today') {
+    return date <= today;
+  } else if (range === 'week') {
+    const day = today.getDay();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    return date >= startOfWeek && date <= endOfWeek;
+  } else if (range === 'month') {
+    return date.getMonth() === today.getMonth() && date.getFullYear() === today.getFullYear();
+  }
+
+  return true;
+}
+
 const filteredCalls = computed(() => {
   let list = allCalls.value;
   if (outcomeFilter.value) list = list.filter((c) => c.outcome === outcomeFilter.value);
   if (search.value.trim()) {
     const q = search.value.trim().toLowerCase();
     list = list.filter((c) => c.business_name?.toLowerCase().includes(q));
+  }
+  if (dateFilter.value !== 'all') {
+    list = list.filter((c) => matchesDateFilter(c, dateFilter.value));
   }
   return list;
 });
