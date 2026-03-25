@@ -224,7 +224,7 @@ import { computed, onMounted, ref } from 'vue';
 const { todos, loading, error, clearError, load, create, update, toggleDone, remove } = useTodos();
 
 const statusFilter = ref(null);
-const dateFilter = ref('today');
+const dateFilter = ref('all');
 const dialogVisible = ref(false);
 const detailsVisible = ref(false);
 const editItem = ref(null);
@@ -235,11 +235,12 @@ const statusOptions = [
   { label: 'All', value: null },
   { label: 'Pending', value: 'pending' },
   { label: 'In Progress', value: 'in_progress' },
+  { label: 'Postponed', value: 'postponed' },
   { label: 'Done', value: 'done' },
 ];
 
 const dateFilterOptions = [
-  { label: 'Today & Overdue', value: 'today' },
+  { label: 'Today', value: 'today' },
   { label: 'Tomorrow', value: 'tomorrow' },
   { label: 'This Week', value: 'week' },
   { label: 'All Dates', value: 'all' },
@@ -263,7 +264,8 @@ const form = ref(emptyForm());
 const statusSortPriority = {
   pending: 0,
   in_progress: 1,
-  done: 2,
+  postponed: 2,
+  done: 3,
 };
 
 function getDateRange(filterType) {
@@ -283,8 +285,8 @@ function matchesDateFilter(todo, filterType) {
   const dueDate = new Date(new Date(todo.due_date).toDateString());
 
   if (filterType === 'today') {
-    // Today + all overdue tasks
-    return dueDate <= today;
+    // Only today's tasks
+    return dueDate.getTime() === today.getTime();
   } else if (filterType === 'tomorrow') {
     return dueDate.getTime() === tomorrow.getTime();
   } else if (filterType === 'week') {
@@ -305,12 +307,8 @@ const filteredTodos = computed(() => {
   // Apply date filter
   filtered = filtered.filter((t) => matchesDateFilter(t, dateFilter.value));
 
-  // Sort by status priority when viewing "All" statuses
-  if (!statusFilter.value) {
-    return filtered.sort((a, b) => statusSortPriority[a.status] - statusSortPriority[b.status]);
-  }
-
-  return filtered;
+  // Sort by created_at DESC (newest tasks first)
+  return filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 });
 
 function prioritySeverity(p) {
